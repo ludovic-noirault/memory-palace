@@ -1,12 +1,24 @@
 # memory-palace
 
-A per-project memory system for Claude Code, built on Obsidian. It kills the cold-start tax:
-every session, the `SessionStart` hook auto-injects the current project's context, so Claude knows
-the stack, current focus, open bugs, and gotchas before you type anything.
+**Your projects remember themselves.**
 
-This repo is the **engine** — hooks, commands, the resolver, the installer, tests, and blank
-templates. It contains **no content**: your project wings, session transcripts, and auto-memory
-never live here (see [Scope](#scope--privacy)).
+Claude Code starts every session cold. You re-explain the stack, what's broken, what you decided last
+week — every time. memory-palace ends that: `cd` into a project and its context is already loaded before
+you type a word — current focus, open bugs, key decisions, gotchas — injected automatically at session start.
+
+The hard part isn't storing notes; it's keeping them *true*. Most people solve cold-start with a growing
+pile of `CLAUDE.md` files that quietly rot — stale, contradictory, unread. memory-palace is engineered
+against that: **one source of truth** for project identity (no hand-synced config to drift), a **`doctor`**
+that flags stale, dead, or dormant state before it bites, and a **test suite** so the wiring can't silently
+break. It's not a notes convention — it's a small, self-checking system.
+
+Three layers: hand-curated per-project **wings** (what matters, stable), Claude's native **auto-memory**
+(synced from the wings), and searchable **session history** (what actually happened). One config file,
+one command to install. See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for how it fits together.
+
+This repo is the **engine** — hooks, commands, the resolver, the installer, tests, and blank templates.
+It contains **no content**: your project wings, session transcripts, and auto-memory never live here
+(see [Scope](#scope--privacy)).
 
 ## Layers
 
@@ -79,3 +91,19 @@ bash skills/palace-tests/run.sh   # stdlib unittest — resolve, validate, rende
 The repo is engine-only by design. It must never contain: project wings, session transcripts,
 auto-memory, `palace.env`, or `~/.claude/tokens`. `.gitignore` guards the obvious cases; the split is
 deliberate because wings and sessions hold confidential work.
+
+## Credits
+
+Layer 3 (session sync + `/recall`) is provided by the
+[`personal-os-skills`](https://github.com/ArtemXTech/personal-os-skills) plugin plus `qmd`, installed
+separately — this repo integrates with it but does not vendor it. Everything else (the palace wings,
+`palace-map`, the hooks, `/palace` commands, and the installer) is original to this project.
+
+## License
+
+[MIT](LICENSE) © 2026 Ludovic Noirault.
+
+## Status
+
+macOS-only today (`launchctl`, `stat -f`, `osascript`). Linux support, CI, and worked examples are
+tracked for a possible public release — see the repo's open items.
