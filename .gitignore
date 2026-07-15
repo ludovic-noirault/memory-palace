@@ -1,0 +1,9 @@
+# Never commit machine config or content — this repo is the ENGINE only.
+palace.env
+*.log
+__pycache__/
+*.pyc
+.DS_Store
+# Guard against accidental content vendoring:
+/vault/
+/claude-sessions/

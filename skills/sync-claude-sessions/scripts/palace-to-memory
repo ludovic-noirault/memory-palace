@@ -1,0 +1,245 @@
+#!/usr/bin/env python3
+"""Sync palace wing key facts into Claude auto-memory for a project.
+
+Usage:
+    palace-to-memory [--project PROJECT] [--force] [--if-newer] [--all]
+
+Creates/updates project_palace_sync.md in the auto-memory directory for
+each project that maps to a known palace wing. Skips if auto-memory already
+has a palace_sync file (use --force to overwrite).
+
+  --project PROJECT  Target specific project (e.g. myproject)
+  --force            Overwrite existing project_palace_sync.md
+  --if-newer         Only regenerate if wing files changed since last sync
+                      (cheap no-op otherwise — meant for frequent hook calls)
+  --all              Process all mappings (default: only empty memory dirs)
+"""
+
+import argparse
+import json
+import os
+import re
+import sys
+from datetime import datetime, timezone
+from pathlib import Path
+
+
+def _cfg(key, default):
+    """Config value: env var > palace.env > default (mirrors palace-map)."""
+    if os.environ.get(key):
+        return os.environ[key]
+    envpath = os.environ.get("PALACE_ENV") or os.path.join(
+        os.environ.get("PALACE_CLAUDE_DIR", os.path.expanduser("~/.claude")), "palace.env")
+    try:
+        with open(envpath) as f:
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith("#") and line.split("=", 1)[0].strip() == key:
+                    return line.split("=", 1)[1].strip()
+    except OSError:
+        pass
+    return default
+
+
+VAULT_DIR = Path(os.path.expanduser(_cfg("VAULT_DIR", "~/theTribe/obsidian")))
+PALACE_DIR = VAULT_DIR / "projects"
+CLAUDE_PROJECTS = Path.home() / ".claude" / "projects"
+MAPPING_JSON = PALACE_DIR / "_mapping.json"
+
+# Palace project → auto-memory dir suffix. Single source of truth is
+# projects/_mapping.json (same file palace-map resolves against). Do not
+# hardcode the list here — edit the JSON and run `palace-map validate`.
+with open(MAPPING_JSON) as _f:
+    MAPPINGS = {p["slug"]: p["memdir"] for p in json.load(_f)["projects"]}
+
+
+def extract_section(content: str, header: str) -> str:
+    """Extract content under a markdown header (## or ###)."""
+    pattern = rf"^#{{1,3}}\s+{re.escape(header)}\s*$"
+    lines = content.split("\n")
+    start = None
+    for i, line in enumerate(lines):
+        if re.match(pattern, line, re.IGNORECASE):
+            start = i + 1
+            break
+    if start is None:
+        return ""
+    result = []
+    for line in lines[start:]:
+        if re.match(r"^#{1,3}\s", line):
+            break
+        result.append(line)
+    return "\n".join(result).strip()
+
+
+def extract_tech_stack(arch_content: str) -> str:
+    """Extract tech stack table as a one-liner summary."""
+    section = extract_section(arch_content, "Tech Stack")
+    if not section:
+        return "Unknown"
+    # Pull first column values from table rows (skip header/separator)
+    rows = [l for l in section.split("\n") if l.startswith("|") and "---" not in l]
+    if not rows:
+        return section[:100]
+    # Second column (value) from each row
+    values = []
+    for row in rows[1:]:  # skip header row
+        cols = [c.strip() for c in row.split("|") if c.strip()]
+        if len(cols) >= 2:
+            values.append(cols[1])
+    return ", ".join(values[:5]) if values else section[:100]
+
+
+def extract_gotchas(arch_content: str) -> str:
+    """Extract Critical Gotchas section."""
+    section = extract_section(arch_content, "Critical Gotchas")
+    if not section:
+        section = extract_section(arch_content, "Gotchas")
+    if not section:
+        return "None documented"
+    lines = [l for l in section.split("\n") if l.strip()]
+    return "\n".join(lines[:5])
+
+
+def extract_current_focus(ctx_content: str) -> str:
+    """Extract Current Focus from CONTEXT.md."""
+    section = extract_section(ctx_content, "Current Focus")
+    if not section:
+        return "See CONTEXT.md"
+    lines = [l for l in section.split("\n") if l.strip()]
+    return "\n".join(lines[:3])
+
+
+def extract_next_up(ctx_content: str) -> str:
+    """Extract Next Up items from CONTEXT.md."""
+    section = extract_section(ctx_content, "Next Up")
+    if not section:
+        return "None"
+    lines = [l for l in section.split("\n") if l.strip()]
+    return "\n".join(lines[:3])
+
+
+def count_open_bugs(bugs_content: str) -> int:
+    """Count open bugs in BUGS.md."""
+    open_bugs = [l for l in bugs_content.split("\n")
+                 if re.search(r"\|\s*(open|🔴|🟡|high|medium)", l, re.IGNORECASE)]
+    return len(open_bugs)
+
+
+def generate_palace_sync(project: str, wing_dir: Path) -> str:
+    """Generate project_palace_sync.md content from palace wing files."""
+    arch_content = (wing_dir / "ARCHITECTURE.md").read_text(encoding="utf-8") \
+        if (wing_dir / "ARCHITECTURE.md").exists() else ""
+    ctx_content = (wing_dir / "CONTEXT.md").read_text(encoding="utf-8") \
+        if (wing_dir / "CONTEXT.md").exists() else ""
+    bugs_content = (wing_dir / "BUGS.md").read_text(encoding="utf-8") \
+        if (wing_dir / "BUGS.md").exists() else ""
+
+    tech_stack = extract_tech_stack(arch_content)
+    gotchas = extract_gotchas(arch_content)
+    focus = extract_current_focus(ctx_content)
+    next_up = extract_next_up(ctx_content)
+    bug_count = count_open_bugs(bugs_content)
+    updated = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+
+    return f"""---
+name: Palace sync — {project}
+description: Key facts from palace wing for {project} — tech stack, gotchas, current focus
+type: project
+---
+*Auto-generated from palace wing on {updated}. Run `palace-to-memory --project {project} --force` to refresh.*
+
+**Tech stack:** {tech_stack}
+
+**Current focus:** {focus}
+
+**Next up:**
+{next_up}
+
+**Open bugs:** {bug_count}
+
+**Critical gotchas:**
+{gotchas}
+
+**Palace wing:** `~/theTribe/obsidian/projects/{project}/`
+Run `/palace` for full context.
+"""
+
+
+def update_memory_index(memory_dir: Path) -> None:
+    """Add palace_sync entry to MEMORY.md if not already present."""
+    index_path = memory_dir / "MEMORY.md"
+    entry = "- [Palace sync](project_palace_sync.md) — key facts from palace wing (tech stack, focus, gotchas)"
+
+    if index_path.exists():
+        content = index_path.read_text(encoding="utf-8")
+        if "project_palace_sync.md" in content:
+            return
+        content = content.rstrip() + "\n" + entry + "\n"
+        index_path.write_text(content, encoding="utf-8")
+    else:
+        index_path.write_text(f"# Memory Index\n\n{entry}\n", encoding="utf-8")
+
+
+def sync_project(project: str, force: bool = False, if_newer: bool = False) -> bool:
+    """Sync palace wing → auto-memory for one project. Returns True if written."""
+    if project not in MAPPINGS:
+        print(f"Unknown project: {project}. Known: {', '.join(MAPPINGS)}")
+        return False
+
+    wing_dir = PALACE_DIR / project
+    if not wing_dir.exists():
+        print(f"No palace wing at {wing_dir}")
+        return False
+
+    memory_dir = CLAUDE_PROJECTS / MAPPINGS[project] / "memory"
+    memory_dir.mkdir(parents=True, exist_ok=True)
+
+    sync_file = memory_dir / "project_palace_sync.md"
+
+    if if_newer and sync_file.exists():
+        wing_files = [wing_dir / n for n in ("CONTEXT.md", "ARCHITECTURE.md", "BUGS.md", "DECISIONS.md")]
+        wing_mtime = max((f.stat().st_mtime for f in wing_files if f.exists()), default=0)
+        if wing_mtime <= sync_file.stat().st_mtime:
+            return False  # up to date, nothing changed since last sync
+    elif sync_file.exists() and not force:
+        print(f"Skipping {project} — palace_sync exists (use --force to overwrite)")
+        return False
+
+    content = generate_palace_sync(project, wing_dir)
+    sync_file.write_text(content, encoding="utf-8")
+    update_memory_index(memory_dir)
+    print(f"Written: {sync_file}")
+    return True
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--project", help="Target project name")
+    parser.add_argument("--force", action="store_true", help="Overwrite existing files")
+    parser.add_argument("--if-newer", action="store_true", dest="if_newer",
+                        help="Only regenerate if wing files changed since last sync")
+    parser.add_argument("--all", action="store_true", dest="all_projects",
+                        help="Process all projects")
+    args = parser.parse_args()
+
+    if args.project:
+        sync_project(args.project, force=args.force, if_newer=args.if_newer)
+    elif args.all_projects:
+        for project in MAPPINGS:
+            sync_project(project, force=args.force, if_newer=args.if_newer)
+    else:
+        # Default: only projects with empty auto-memory dirs
+        written = 0
+        for project, dir_suffix in MAPPINGS.items():
+            memory_dir = CLAUDE_PROJECTS / dir_suffix / "memory"
+            sync_file = memory_dir / "project_palace_sync.md"
+            if not sync_file.exists():
+                if sync_project(project, force=False):
+                    written += 1
+        if written == 0:
+            print("All projects already have palace_sync. Use --force to refresh.")
+
+
+if __name__ == "__main__":
+    main()

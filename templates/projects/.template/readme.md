@@ -1,0 +1,33 @@
+---
+tags: [project]
+project: {{PROJECT_NAME}}
+status: active
+client: {{CLIENT}}
+stack: [{{STACK}}]
+---
+# {{PROJECT_NAME}}
+
+> One-line description
+
+## Overview
+
+What it does and who it's for.
+
+## Team
+
+- Owner:
+- Client:
+
+## Links
+
+- Repo:
+- Staging:
+- Production:
+- CI/CD:
+- Docs:
+
+## Quick Start
+
+```sh
+# commands to run locally
+```
