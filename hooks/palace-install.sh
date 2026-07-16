@@ -12,7 +12,7 @@ set -euo pipefail
 _OV_VAULT="${VAULT_DIR:-}"; _OV_PCD="${PALACE_CLAUDE_DIR:-}"
 PCD_BOOT="${PALACE_CLAUDE_DIR:-$HOME/.claude}"
 [ -f "$PCD_BOOT/palace.env" ] && . "$PCD_BOOT/palace.env"
-VAULT_DIR="${_OV_VAULT:-${VAULT_DIR:-$HOME/theTribe/obsidian}}"
+VAULT_DIR="${_OV_VAULT:-${VAULT_DIR:-$HOME/obsidian}}"
 PALACE_CLAUDE_DIR="${_OV_PCD:-${PALACE_CLAUDE_DIR:-$HOME/.claude}}"
 CLAUDE="$PALACE_CLAUDE_DIR"; VAULT="$VAULT_DIR"
 SETTINGS="$CLAUDE/settings.json"

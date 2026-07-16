@@ -8,7 +8,7 @@
 _OV_VAULT="$VAULT_DIR"; _OV_PCD="$PALACE_CLAUDE_DIR"
 PCD_BOOT="${PALACE_CLAUDE_DIR:-$HOME/.claude}"
 [ -f "$PCD_BOOT/palace.env" ] && . "$PCD_BOOT/palace.env"
-VAULT_DIR="${_OV_VAULT:-${VAULT_DIR:-$HOME/theTribe/obsidian}}"
+VAULT_DIR="${_OV_VAULT:-${VAULT_DIR:-$HOME/obsidian}}"
 PALACE_CLAUDE_DIR="${_OV_PCD:-${PALACE_CLAUDE_DIR:-$HOME/.claude}}"
 export VAULT_DIR PALACE_CLAUDE_DIR   # child palace-map inherits the resolved config
 

@@ -2,17 +2,18 @@
 """Apply approved palace harvest candidates to wing files.
 
 Usage:
-    python3 palace-apply.py --review ~/theTribe/obsidian/palace-harvest-2026-05-11.md
-    python3 palace-apply.py --review ~/theTribe/obsidian/palace-harvest-2026-05-11.md --dry-run
+    python3 palace-apply.py --review ~/obsidian/palace-harvest-2026-05-11.md
+    python3 palace-apply.py --review ~/obsidian/palace-harvest-2026-05-11.md --dry-run
 """
 
 import argparse
+import os
 import re
 import shutil
 from datetime import datetime
 from pathlib import Path
 
-VAULT = Path.home() / "theTribe/obsidian"
+VAULT = Path(os.environ.get("VAULT_DIR", str(Path.home() / "obsidian")))
 PROJECTS_DIR = VAULT / "projects"
 
 # Content containing any of these was never actually filled in — either the

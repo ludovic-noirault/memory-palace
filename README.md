@@ -77,7 +77,7 @@ palace-map archive <slug>    set a wing status: archived  (unarchive to reverse)
 ## Config
 
 One file, `~/.claude/palace.env`: `VAULT_DIR` + `PALACE_CLAUDE_DIR`. Precedence everywhere is
-**real env var > palace.env > built-in default** (`~/theTribe/obsidian`, `~/.claude`). Moving machines
+**real env var > palace.env > built-in default** (`~/obsidian`, `~/.claude`). Moving machines
 = edit those two lines and re-run `install.sh`.
 
 ## Tests

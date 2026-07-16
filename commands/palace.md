@@ -10,7 +10,7 @@ Print exactly the block below, verbatim. Do not run any tools, read any files, o
 **Why it exists:** Claude Code sessions are stateless — every new session starts cold. The palace is a per-project memory
 of what's being worked on, what's broken, and why past decisions were made, so you don't re-explain context every time.
 
-**Where it lives:** ~/theTribe/obsidian/projects/{project-name}/ — 5 files: readme.md, ARCHITECTURE.md, BUGS.md,
+**Where it lives:** ~/obsidian/projects/{project-name}/ — 5 files: readme.md, ARCHITECTURE.md, BUGS.md,
 CONTEXT.md, DECISIONS.md. CONTEXT.md is auto-injected into every session via the SessionStart hook.
 
 **Commands:**
@@ -30,6 +30,6 @@ CONTEXT.md, DECISIONS.md. CONTEXT.md is auto-injected into every session via the
 **Maintenance (CLI, rarely needed):** `palace-install.sh` (re)installs/moves the system to a new machine;
 `palace-map validate|render` are plumbing run by /palace:create. See the Operations section of memory-setup.md.
 
-**More detail:** ~/theTribe/obsidian/memory-setup.md (architecture + Operations) and projects/_mapping.json
+**More detail:** ~/obsidian/memory-setup.md (architecture + Operations) and projects/_mapping.json
 (canonical project ↔ hook ↔ auto-memory identity source).
 ```

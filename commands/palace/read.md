@@ -2,18 +2,18 @@
 description: Load memory palace context for the active project — read-only, never creates or modifies anything
 ---
 
-You are loading the memory palace for the active project. The palace lives at `~/theTribe/obsidian/projects/`. This command performs **zero writes** — no wing creation, no file edits, no session stamping. If anything is missing, tell the user and point at `/palace:create` or `/palace:update` instead of acting on their behalf.
+You are loading the memory palace for the active project. The palace lives at `~/obsidian/projects/`. This command performs **zero writes** — no wing creation, no file edits, no session stamping. If anything is missing, tell the user and point at `/palace:create` or `/palace:update` instead of acting on their behalf.
 
 ---
 
 ## Step 1 — Identify the project
 
-Run `pwd`. Read `~/theTribe/obsidian/projects/_mapping.md` and match `$PWD` against the "SessionStart/hook `$PWD` match" column (glob patterns, same semantics as bash `case`).
+Run `pwd`. Read `~/obsidian/projects/_mapping.md` and match `$PWD` against the "SessionStart/hook `$PWD` match" column (glob patterns, same semantics as bash `case`).
 
 - Match found → that row's palace wing name is the project.
 - No match → fall back to the last path component of `$PWD` as a guess, but do not treat this as confirmed — say so in the brief ("no entry in _mapping.md for this path, guessing project = `{name}`").
 
-Set `WING=~/theTribe/obsidian/projects/{project-name}`.
+Set `WING=~/obsidian/projects/{project-name}`.
 
 ---
 
@@ -66,7 +66,7 @@ Output:
 ## Step 5 — Recent sessions (append to brief)
 
 ```bash
-grep -rl "{project-name}" ~/theTribe/obsidian/claude-sessions/*.md 2>/dev/null | sort -r | head -3
+grep -rl "{project-name}" ~/obsidian/claude-sessions/*.md 2>/dev/null | sort -r | head -3
 ```
 
 For each file found, extract `date`, `title`, `status` from YAML frontmatter. Truncate title to 40 chars, strip any XML-like tags. If any found, append:

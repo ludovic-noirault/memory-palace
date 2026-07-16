@@ -3,7 +3,7 @@
 
 All hooks/scripts resolve project identity through THIS tool instead of
 duplicating `case` lists. Canonical data lives in:
-    ~/theTribe/obsidian/projects/_mapping.json
+    ~/obsidian/projects/_mapping.json
 
 Edit that JSON, then run `palace-map render` + `palace-map validate`.
 
@@ -54,7 +54,7 @@ def _cfg(key, default):
     return os.environ.get(key) or _ENV_FILE.get(key) or default
 
 
-VAULT_DIR = Path(os.path.expanduser(_cfg("VAULT_DIR", "~/theTribe/obsidian")))
+VAULT_DIR = Path(os.path.expanduser(_cfg("VAULT_DIR", "~/obsidian")))
 CLAUDE_DIR = Path(os.path.expanduser(_cfg("PALACE_CLAUDE_DIR", "~/.claude")))
 VAULT_PROJECTS = VAULT_DIR / "projects"
 MAPPING_JSON = VAULT_PROJECTS / "_mapping.json"

@@ -41,7 +41,7 @@ def _cfg(key, default):
     return default
 
 
-VAULT_DIR = Path(os.path.expanduser(_cfg("VAULT_DIR", "~/theTribe/obsidian")))
+VAULT_DIR = Path(os.path.expanduser(_cfg("VAULT_DIR", "~/obsidian")))
 PALACE_DIR = VAULT_DIR / "projects"
 CLAUDE_PROJECTS = Path.home() / ".claude" / "projects"
 MAPPING_JSON = PALACE_DIR / "_mapping.json"
@@ -161,7 +161,7 @@ type: project
 **Critical gotchas:**
 {gotchas}
 
-**Palace wing:** `~/theTribe/obsidian/projects/{project}/`
+**Palace wing:** `~/obsidian/projects/{project}/`
 Run `/palace` for full context.
 """
 

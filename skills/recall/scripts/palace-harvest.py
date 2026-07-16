@@ -18,7 +18,7 @@ import subprocess
 from datetime import datetime
 from pathlib import Path
 
-VAULT = Path(os.environ.get("VAULT_DIR", str(Path.home() / "theTribe/obsidian")))
+VAULT = Path(os.environ.get("VAULT_DIR", str(Path.home() / "obsidian")))
 PROJECTS_DIR = VAULT / "projects"
 DEFAULT_OUTPUT = VAULT / f"palace-harvest-{datetime.now().strftime('%Y-%m-%d')}.md"
 

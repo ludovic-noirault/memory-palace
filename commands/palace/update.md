@@ -2,15 +2,15 @@
 description: Flush current session's learnings into the memory palace wing for the active project
 ---
 
-You are updating the memory palace wing for the active project. The palace lives at `~/theTribe/obsidian/projects/`. This command requires an existing wing — it never creates one. Execute every step below in order without asking for confirmation unless you hit an ambiguous case.
+You are updating the memory palace wing for the active project. The palace lives at `~/obsidian/projects/`. This command requires an existing wing — it never creates one. Execute every step below in order without asking for confirmation unless you hit an ambiguous case.
 
 ---
 
 ## Step 1 — Identify the project
 
-Run `pwd`. Read `~/theTribe/obsidian/projects/_mapping.md` and match `$PWD` against the "SessionStart/hook `$PWD` match" column (glob patterns, same semantics as bash `case`). No match → fall back to the last path component of `$PWD` as the project name.
+Run `pwd`. Read `~/obsidian/projects/_mapping.md` and match `$PWD` against the "SessionStart/hook `$PWD` match" column (glob patterns, same semantics as bash `case`). No match → fall back to the last path component of `$PWD` as the project name.
 
-Set `WING=~/theTribe/obsidian/projects/{project-name}`.
+Set `WING=~/obsidian/projects/{project-name}`.
 
 ---
 
@@ -29,12 +29,12 @@ Run /palace:create first.
 
 Try `$CLAUDE_SESSION_ID` first:
 ```bash
-grep -rl "$CLAUDE_SESSION_ID" ~/theTribe/obsidian/claude-sessions/*.md 2>/dev/null | head -1
+grep -rl "$CLAUDE_SESSION_ID" ~/obsidian/claude-sessions/*.md 2>/dev/null | head -1
 ```
 
 If empty (env var unavailable in Bash tool), fall back to the most recently modified session file with `projects: []` unset:
 ```bash
-ls -t ~/theTribe/obsidian/claude-sessions/*.md | head -20 | xargs grep -l "^projects: \[\]" | head -1
+ls -t ~/obsidian/claude-sessions/*.md | head -20 | xargs grep -l "^projects: \[\]" | head -1
 ```
 
 Once found, update the `projects` frontmatter field — replace `projects: []` with:
