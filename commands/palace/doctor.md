@@ -41,6 +41,7 @@ For each problem found, name the concrete fix. Map symptoms → remedies:
 | `validate` WARN — unwired wing (wing, no entry) | add the wing to `_mapping.json`, or `/palace:create` from its repo |
 | Wing `STALE` (repo commits newer than CONTEXT.md) | `cd` into that repo and run `/palace:update` |
 | Wing `DORMANT` (>90d no activity) / `no activity signal` | offer to archive: `~/.claude/hooks/palace-map archive <slug>` — but confirm it's genuinely dormant first (a "no activity signal" wing may just have an uncloned repo — verify the repo path in `_mapping.json` before archiving) |
+| Wing flagged `(never quizzed — try /palace:quiz)` | Purely informational — suggest running `/palace:quiz` from that project's repo; never required, never applied automatically |
 
 Present the proposed actions as a numbered list and **ask which to apply** (or none). Only after an explicit yes:
 - re-install / render / archive → run the command;
