@@ -7,6 +7,7 @@ the fixture. Stdlib unittest only — runs on /usr/bin/python3 with zero install
 
     python3 -m unittest -v        (from this dir)
 """
+import datetime
 import json
 import os
 import subprocess
@@ -214,6 +215,38 @@ class SystemDoctorGlossaryTests(unittest.TestCase):
         rc, out, _ = run(root, "doctor", "--system")
         self.assertEqual(rc, 1)
         self.assertIn("GLOSSARY.md", out)
+
+
+class QuizStatusTests(unittest.TestCase):
+    def _repo_with_commit(self, root):
+        repo = root / "repo"
+        repo.mkdir()
+        subprocess.run(["git", "init", "-q", str(repo)], check=True)
+        (repo / "f.txt").write_text("x")
+        subprocess.run(["git", "-C", str(repo), "add", "."], check=True)
+        subprocess.run(["git", "-C", str(repo), "-c", "user.email=t@t", "-c", "user.name=t",
+                        "commit", "-q", "-m", "c"], check=True)
+        return repo
+
+    def test_never_quizzed_active_repo_nudges(self):
+        root = make_vault([{"slug": "svc", "globs": ["*/svc*"], "memdir": "-s", "repo": "~/x"}])
+        repo = self._repo_with_commit(root)
+        (root / "projects" / "_mapping.json").write_text(json.dumps({"projects": [
+            {"slug": "svc", "globs": ["*/svc*"], "memdir": "-s", "repo": str(repo)}]}, indent=2))
+        self.assertEqual(run(root, "quiz-status", "svc")[1].strip(), "NUDGE")
+
+    def test_recently_quizzed_no_nudge(self):
+        root = make_vault([{"slug": "svc", "globs": ["*/svc*"], "memdir": "-s", "repo": "~/x"}])
+        repo = self._repo_with_commit(root)
+        (root / "projects" / "_mapping.json").write_text(json.dumps({"projects": [
+            {"slug": "svc", "globs": ["*/svc*"], "memdir": "-s", "repo": str(repo)}]}, indent=2))
+        today = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d")
+        write_quiz_log(root / "projects", "svc", [(today, "6/8", "none")])
+        self.assertEqual(run(root, "quiz-status", "svc")[1].strip(), "")
+
+    def test_no_activity_no_nudge(self):
+        root = make_vault([{"slug": "svc", "globs": ["*/svc*"], "memdir": "-s", "repo": "~/nonexistent-x"}])
+        self.assertEqual(run(root, "quiz-status", "svc")[1].strip(), "")
 
 
 if __name__ == "__main__":
