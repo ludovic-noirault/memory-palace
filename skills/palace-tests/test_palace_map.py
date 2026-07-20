@@ -286,5 +286,22 @@ class ReminderTests(unittest.TestCase):
         self.assertIn("Also", out)
 
 
+class DoctorQuizNoteTests(unittest.TestCase):
+    def test_never_quizzed_wing_gets_note(self):
+        root = make_vault([{"slug": "alpha", "globs": ["*/alpha*"], "memdir": "-a", "repo": "~/a"}])
+        # Create a git repo with a commit so the wing has activity → status becomes "ok"
+        repo = root / "repo"
+        repo.mkdir()
+        subprocess.run(["git", "init", "-q", str(repo)], check=True)
+        (repo / "f.txt").write_text("x")
+        subprocess.run(["git", "-C", str(repo), "add", "."], check=True)
+        subprocess.run(["git", "-C", str(repo), "-c", "user.email=t@t", "-c", "user.name=t",
+                        "commit", "-q", "-m", "c"], check=True)
+        (root / "projects" / "_mapping.json").write_text(json.dumps({"projects": [
+            {"slug": "alpha", "globs": ["*/alpha*"], "memdir": "-a", "repo": str(repo)}]}, indent=2))
+        out = run(root, "doctor")[1]
+        self.assertIn("never quizzed", out)
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

@@ -382,6 +382,8 @@ def cmd_doctor(args):
             status = f"DORMANT — {act_d}d since last activity → consider `status: archived`"
         elif act is None:
             status = "no activity signal (not a local git repo, no tagged sessions) → verify repo path or archive"
+        if status == "ok" and quiz_log_last_date(slug) is None:
+            status = "ok (never quizzed — try /palace:quiz)"
         print(f"{slug:32} {(str(act_d)+'d ago' if act_d is not None else '—'):14} {status}")
 
 
