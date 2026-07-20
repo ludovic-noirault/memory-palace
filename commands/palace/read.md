@@ -32,12 +32,13 @@ Run /palace:create to set one up.
 
 ## Step 3 — Load the wing
 
-Read all 5 files in parallel:
+Read all 6 files in parallel:
 - `readme.md` — project overview and links
 - `ARCHITECTURE.md` — stack, patterns, critical gotchas
 - `BUGS.md` — open bugs, security issues, debt
 - `CONTEXT.md` — current focus, blocked items, next up
 - `DECISIONS.md` — architectural decisions and rationale
+- `GLOSSARY.md` — domain terms and their definitions
 
 ---
 

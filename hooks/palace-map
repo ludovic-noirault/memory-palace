@@ -13,6 +13,7 @@ Commands:
   repo    <slug>    print the repo path for <slug> (with ~ expanded)
   list              print all slugs, one per line
   activity <slug>   print last-activity epoch seconds (git HEAD commit time), or empty
+  quiz-status <slug> print NUDGE if the wing hasn't been quizzed in QUIZ_NUDGE_DAYS+ AND has recent activity
   validate          check every mapping has a wing + every wing is wired; exit 1 on ERROR
   render            rewrite the generated table region in _mapping.md from the JSON
   doctor            report per-wing staleness (behind activity) + dormancy (>90d idle)
@@ -234,6 +235,45 @@ def is_archived(slug):
     return "status: archived" in head
 
 
+QUIZ_NUDGE_DAYS = 4
+
+
+def quiz_log_last_date(slug):
+    """Epoch seconds of the last dated row in QUIZ_LOG.md, or None if never quizzed."""
+    f = VAULT_PROJECTS / slug / "QUIZ_LOG.md"
+    if not f.is_file():
+        return None
+    rows = [l for l in f.read_text().splitlines() if l.strip().startswith("|") and "---" not in l]
+    if len(rows) <= 1:  # header only (or nothing) — no quiz run yet
+        return None
+    cols = [c.strip() for c in rows[-1].split("|") if c.strip()]
+    if not cols:
+        return None
+    try:
+        import datetime
+        dt = datetime.datetime.strptime(cols[0], "%Y-%m-%d").replace(tzinfo=datetime.timezone.utc)
+        return int(dt.timestamp())
+    except ValueError:
+        return None
+
+
+def cmd_quiz_status(args):
+    """Print NUDGE if it's been >= QUIZ_NUDGE_DAYS since the wing's last quiz AND the
+    wing has real recent activity (not dormant) — else print nothing."""
+    slug = args[0] if args else None
+    e = entry(slug) if slug else None
+    if not e:
+        return
+    import time
+    now = int(time.time())
+    act = git_commit_epoch(e["repo"]) or newest_session_epoch(slug)
+    if not act or (now - act) // 86400 > DORMANT_DAYS:
+        return  # dormant or no activity signal — don't nag a dead project
+    last_quiz = quiz_log_last_date(slug)
+    if last_quiz is None or (now - last_quiz) // 86400 >= QUIZ_NUDGE_DAYS:
+        print("NUDGE")
+
+
 def _doctor_system():
     """Verify the WIRING (not just wing freshness): config, hooks, launchd, paths, sync.
     Prints one line per check; exits non-zero if any red."""
@@ -286,14 +326,14 @@ def _doctor_system():
     ck(MAPPING_JSON.is_file(), "_mapping.json present")
     ck(MAPPING_MD.is_file(), "_mapping.md present")
 
-    # 5. every wing has its 5 files
+    # 5. every wing has its 6 files
     missing = []
     for p in load():
         d = VAULT_PROJECTS / p["slug"]
-        for f in ("readme.md", "ARCHITECTURE.md", "BUGS.md", "CONTEXT.md", "DECISIONS.md"):
+        for f in ("readme.md", "ARCHITECTURE.md", "BUGS.md", "CONTEXT.md", "DECISIONS.md", "GLOSSARY.md"):
             if not (d / f).is_file():
                 missing.append(f"{p['slug']}/{f}")
-    ck(not missing, "every wing has its 5 files", ", ".join(missing[:5]))
+    ck(not missing, "every wing has its 6 files", ", ".join(missing[:5]))
 
     # 6. _mapping.md table in sync with _mapping.json
     ck(_table_in_sync(), "_mapping.md table in sync (render = no-op)", "run `palace-map render`")
@@ -342,6 +382,8 @@ def cmd_doctor(args):
             status = f"DORMANT — {act_d}d since last activity → consider `status: archived`"
         elif act is None:
             status = "no activity signal (not a local git repo, no tagged sessions) → verify repo path or archive"
+        if status == "ok" and quiz_log_last_date(slug) is None:
+            status = "ok (never quizzed — try /palace:quiz)"
         print(f"{slug:32} {(str(act_d)+'d ago' if act_d is not None else '—'):14} {status}")
 
 
@@ -370,7 +412,7 @@ def cmd_unarchive(args):
 CMDS = {
     "resolve": cmd_resolve, "memdir": cmd_memdir, "repo": cmd_repo, "list": cmd_list,
     "activity": cmd_activity, "validate": cmd_validate, "render": cmd_render, "doctor": cmd_doctor,
-    "archive": cmd_archive, "unarchive": cmd_unarchive,
+    "archive": cmd_archive, "unarchive": cmd_unarchive, "quiz-status": cmd_quiz_status,
 }
 
 if __name__ == "__main__":
