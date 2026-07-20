@@ -249,5 +249,42 @@ class QuizStatusTests(unittest.TestCase):
         self.assertEqual(run(root, "quiz-status", "svc")[1].strip(), "")
 
 
+class ReminderTests(unittest.TestCase):
+    PALACE_REMINDER = CLAUDE_DIR / "hooks" / "palace-reminder.sh"
+
+    def _run_reminder(self, root, cwd):
+        env = {**os.environ, "VAULT_DIR": str(root), "PALACE_CLAUDE_DIR": str(CLAUDE_DIR)}
+        work = root / cwd
+        work.mkdir(parents=True, exist_ok=True)
+        r = subprocess.run(["bash", str(self.PALACE_REMINDER)], capture_output=True, text=True,
+                           env=env, cwd=str(work))
+        return r.stdout
+
+    def test_no_match_silent(self):
+        root = make_vault([{"slug": "svc", "globs": ["*/svc*"], "memdir": "-s", "repo": "~/x"}])
+        out = self._run_reminder(root, "other")
+        self.assertEqual(out.strip(), "")
+
+    def test_match_no_quiz_nudge_without_activity(self):
+        root = make_vault([{"slug": "svc", "globs": ["*/svc*"], "memdir": "-s", "repo": "~/x"}])
+        out = self._run_reminder(root, "svc")
+        self.assertIn("run /palace update", out)
+        self.assertNotIn("Also", out)
+
+    def test_match_quiz_nudge_when_active_and_never_quizzed(self):
+        root = make_vault([{"slug": "svc", "globs": ["*/svc*"], "memdir": "-s", "repo": "~/x"}])
+        repo = root / "repo"
+        repo.mkdir()
+        subprocess.run(["git", "init", "-q", str(repo)], check=True)
+        (repo / "f.txt").write_text("x")
+        subprocess.run(["git", "-C", str(repo), "add", "."], check=True)
+        subprocess.run(["git", "-C", str(repo), "-c", "user.email=t@t", "-c", "user.name=t",
+                        "commit", "-q", "-m", "c"], check=True)
+        (root / "projects" / "_mapping.json").write_text(json.dumps({"projects": [
+            {"slug": "svc", "globs": ["*/svc*"], "memdir": "-s", "repo": str(repo)}]}, indent=2))
+        out = self._run_reminder(root, "svc")
+        self.assertIn("Also", out)
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
