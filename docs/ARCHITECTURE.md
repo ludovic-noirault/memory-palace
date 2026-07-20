@@ -17,10 +17,12 @@ knowledge is inaccessible. Ad-hoc fixes (a growing `CLAUDE.md`) drift: stale, co
 | **2 — Auto-memory** | "What are the standing rules/blockers here?" | `~/.claude/projects/*/memory/` | Synced from the wing on `Stop` (`palace-to-memory --if-newer`) |
 | **3 — Sessions + recall** | "What did I ever decide about X?" | `$VAULT/claude-sessions/` + a BM25 index | Session sync + `/recall` (**external**, see README prerequisites) |
 
-Layer 1 is the load-bearing one: hand-curated, stable, strategic. A wing has five files —
+Layer 1 is the load-bearing one: hand-curated, stable, strategic. A wing has six curated files —
 `readme.md` (overview/team/links), `ARCHITECTURE.md` (stack/patterns/gotchas), `BUGS.md`
 (open bugs/security/debt), `CONTEXT.md` (current focus/next up/blocked — the file that gets injected),
-and `DECISIONS.md` (the *why* behind choices).
+`DECISIONS.md` (the *why* behind choices), and `GLOSSARY.md` (domain terms, maintained via the
+`domain-modeling` skill, loaded on demand rather than injected). A seventh file, `QUIZ_LOG.md`, is an
+append-only log — not hand-curated content — tracking `/palace:quiz` comprehension scores over time.
 
 ## Single source of truth
 
@@ -47,7 +49,7 @@ The point of the system is that it stays *true*, not just that it stores things:
 - **`palace-map doctor`** — reports per-wing **staleness** (repo has commits newer than `CONTEXT.md`) and
   **dormancy** (no activity in 90d), keyed off real git/session activity, not file mtime.
 - **`palace-map doctor --system`** — verifies the whole install: config present, hooks registered in
-  `settings.json`, launchd job loaded, referenced paths exist, every wing has its 5 files, `_mapping.md`
+  `settings.json`, launchd job loaded, referenced paths exist, every wing has its 6 files, `_mapping.md`
   in sync, validate clean. One green/red report; non-zero exit on any red.
 - **Staleness guard** — `palace-context.sh` appends a warning at SessionStart when the injected context is
   behind the repo, so you never silently trust a stale wing.
