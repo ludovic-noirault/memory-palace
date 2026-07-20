@@ -45,11 +45,15 @@ echo "  engine files deployed"
 
 # 2. vault skeleton — create-if-missing only, never overwrite existing content
 mkdir -p "$VAULT/projects" "$VAULT/claude-sessions"
-[ -e "$VAULT/projects/.template" ]     || cp -pR "$REPO/templates/projects/.template" "$VAULT/projects/.template"
+mkdir -p "$VAULT/projects/.template"
+for f in "$REPO"/templates/projects/.template/*; do
+  name="$(basename "$f")"
+  [ -f "$VAULT/projects/.template/$name" ] || cp -p "$f" "$VAULT/projects/.template/$name"
+done
 [ -f "$VAULT/projects/_mapping.json" ] || cp -p  "$REPO/templates/projects/_mapping.json" "$VAULT/projects/_mapping.json"
 [ -f "$VAULT/projects/_mapping.md" ]   || cp -p  "$REPO/templates/projects/_mapping.md"   "$VAULT/projects/_mapping.md"
 [ -f "$VAULT/projects/_relations.md" ] || cp -p  "$REPO/templates/projects/_relations.md" "$VAULT/projects/_relations.md"
-echo "  vault skeleton ensured"
+echo "  vault skeleton ensured (backfilled any new template files)"
 
 # 3. wire hooks + launchd + health gate (in-place installer, deployed in step 1)
 bash "$CLAUDE/hooks/palace-install.sh"
