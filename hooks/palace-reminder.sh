@@ -18,4 +18,4 @@ msg="Palace: run /palace update to persist session learnings."
 if [ "$("$MAP" quiz-status "$project")" = "NUDGE" ]; then
   msg="$msg Also: it's been a few days since /palace:quiz on $project — worth testing retention."
 fi
-printf '{"systemMessage": "%s"}\n' "$msg"
+python3 -c 'import json,sys; print(json.dumps({"systemMessage": sys.argv[1]}))' "$msg"
