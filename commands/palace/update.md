@@ -48,7 +48,7 @@ If `projects` already has entries, append only if not already listed. Do this si
 
 ## Step 4 — Load the wing
 
-Read all 5 files in parallel: `readme.md`, `ARCHITECTURE.md`, `BUGS.md`, `CONTEXT.md`, `DECISIONS.md`.
+Read all 6 files in parallel: `readme.md`, `ARCHITECTURE.md`, `BUGS.md`, `CONTEXT.md`, `DECISIONS.md`, `GLOSSARY.md`.
 
 ---
 
@@ -94,6 +94,7 @@ Then update only what actually changed:
 - **BUGS.md**: newly discovered or resolved bugs
 - **DECISIONS.md**: any decision inferable from recent commits or code patterns
 - **ARCHITECTURE.md / Critical Gotchas**: any new gotcha surfaced during exploration
+- **GLOSSARY.md**: invoke the `domain-modeling` skill against this session's conversation and code changes to spot new or changed domain terms. Write resolved terms into `GLOSSARY.md` using its `## [Term]` / `- **Definition**` / `- **Avoid**` / `- **More info**` format — **not** into `CONTEXT.md`, which in this wing already means "current focus," a different file than domain-modeling's own default glossary location. Append only new/changed terms; leave existing ones untouched unless they've demonstrably changed.
 
 Be surgical — only write lines that genuinely changed. Do not rewrite files that are already accurate. Tell the user what was updated and what was already current.
 
