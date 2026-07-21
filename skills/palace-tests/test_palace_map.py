@@ -25,6 +25,9 @@ TABLE_END = "<!-- palace-map:table:end -->"
 WING_FILES = ["readme.md", "ARCHITECTURE.md", "BUGS.md", "CONTEXT.md", "DECISIONS.md", "GLOSSARY.md"]
 QUIZ_LOG_HEADER = "| Date | Score | Weak topics |\n|------|-------|-------------|\n"
 
+REPO_ROOT = Path(__file__).resolve().parents[2]
+TEMPLATE_DIR = REPO_ROOT / "templates" / "projects" / ".template"
+
 
 def make_wing(projects: Path, slug: str, status: str = "active"):
     d = projects / slug
@@ -68,6 +71,14 @@ def run(root, *args, extra_env=None, cwd=None):
         env.update(extra_env)
     r = subprocess.run([str(PALACE_MAP), *args], capture_output=True, text=True, env=env, cwd=cwd)
     return r.returncode, r.stdout, r.stderr
+
+
+class TemplateFrontmatterTests(unittest.TestCase):
+    def test_every_core_template_has_anticipated_queries(self):
+        for name in ("readme.md", "ARCHITECTURE.md", "BUGS.md", "CONTEXT.md",
+                     "DECISIONS.md", "GLOSSARY.md"):
+            text = (TEMPLATE_DIR / name).read_text()
+            self.assertIn("anticipated_queries:", text, f"{name} missing anticipated_queries")
 
 
 class ResolveTests(unittest.TestCase):

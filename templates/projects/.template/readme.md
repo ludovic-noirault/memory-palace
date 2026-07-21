@@ -4,6 +4,9 @@ project: {{PROJECT_NAME}}
 status: active
 client: {{CLIENT}}
 stack: [{{STACK}}]
+anticipated_queries:
+  - "what does this project do"
+  - "who is it for"
 ---
 # {{PROJECT_NAME}}
 

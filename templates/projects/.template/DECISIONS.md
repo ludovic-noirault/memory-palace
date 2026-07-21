@@ -1,6 +1,9 @@
 ---
 tags: [project, decisions]
 project: {{PROJECT_NAME}}
+anticipated_queries:
+  - "why did we choose this approach"
+  - "what alternatives were rejected"
 ---
 # Decisions — {{PROJECT_NAME}}
 
