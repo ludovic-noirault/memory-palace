@@ -334,6 +334,19 @@ class SearchTests(unittest.TestCase):
         rc, out, _ = run(root, "search", "bugs", "--slug", "alpha")
         self.assertEqual(rc, 0)
 
+    def test_non_utf8_file_no_crash(self):
+        """Verify anticipated_queries tolerates non-UTF-8 file content and doesn't crash.
+        This tests the fix for UnicodeDecodeError that wasn't caught before."""
+        root = make_vault([{"slug": "alpha", "globs": ["*/alpha*"], "memdir": "-a", "repo": "~/a"}])
+        # Write a file with non-UTF-8 bytes (\xe9 is invalid UTF-8 continuation).
+        # The file has valid frontmatter with anticipated_queries, but contains bad bytes.
+        (root / "projects" / "alpha" / "GLOSSARY.md").write_bytes(
+            b'---\ntags: [project]\nproject: alpha\nanticipated_queries:\n  - "caf\xe9 test"\n---\n# doc\n'
+        )
+        # Search should not crash; it should exit 0 and handle the file gracefully.
+        rc, out, _ = run(root, "search", "cafe", "--slug", "alpha")
+        self.assertEqual(rc, 0)
+
     def test_slug_scope_excludes_other_wings(self):
         root = make_vault([
             {"slug": "alpha", "globs": ["*/alpha*"], "memdir": "-a", "repo": "~/a"},

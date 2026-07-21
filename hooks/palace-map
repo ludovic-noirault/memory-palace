@@ -155,7 +155,7 @@ def anticipated_queries(path):
     """Parse the anticipated_queries: YAML list from a doc's frontmatter. Never raises —
     missing field, no frontmatter, or a malformed (non-list) value all return []."""
     try:
-        text = path.read_text()
+        text = path.read_text(errors="ignore")
     except OSError:
         return []
     block = _frontmatter_block(text)
