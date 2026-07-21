@@ -215,7 +215,7 @@ def cmd_search(args):
                 score = len(q_words & _words(aq))
                 if score > 0:
                     results.append((score, slug, str(rel), aq))
-    results.sort(key=lambda r: -r[0])
+    results.sort(key=lambda r: (-r[0], r[1], r[2]))
     if not results:
         print("no matches")
         return

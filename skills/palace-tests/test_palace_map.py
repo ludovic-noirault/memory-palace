@@ -400,6 +400,19 @@ class SearchTests(unittest.TestCase):
         out = run(root, "search", "widget topic", "--slug", "alpha")[1]
         self.assertEqual(len(out.strip().splitlines()), 8)
 
+    def test_tied_scores_ordered_deterministically(self):
+        root = make_vault([
+            {"slug": "beta", "globs": ["*/beta*"], "memdir": "-b", "repo": "~/b"},
+            {"slug": "alpha", "globs": ["*/alpha*"], "memdir": "-a", "repo": "~/a"},
+        ])
+        self._wing_with_aq(root, "beta", "features/z.md", ["widget topic tie"])
+        self._wing_with_aq(root, "alpha", "features/a.md", ["widget topic tie"])
+        expected = run(root, "search", "widget topic tie", "--all")[1]
+        for _ in range(5):
+            self.assertEqual(run(root, "search", "widget topic tie", "--all")[1], expected)
+        self.assertEqual(
+            expected.strip().splitlines()[0].split(" — ")[0], "alpha/features/a.md")
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
