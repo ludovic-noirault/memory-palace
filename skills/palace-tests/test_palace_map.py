@@ -303,5 +303,73 @@ class DoctorQuizNoteTests(unittest.TestCase):
         self.assertIn("never quizzed", out)
 
 
+class SearchTests(unittest.TestCase):
+    def _wing_with_aq(self, root, slug, relpath, queries):
+        d = root / "projects" / slug / relpath
+        d.parent.mkdir(parents=True, exist_ok=True)
+        text = f"---\ntags: [project]\nproject: {slug}\nanticipated_queries:\n"
+        for q in queries:
+            text += f'  - "{q}"\n'
+        text += "---\n# doc\n"
+        d.write_text(text)
+
+    def test_present_frontmatter_matches(self):
+        root = make_vault([{"slug": "alpha", "globs": ["*/alpha*"], "memdir": "-a", "repo": "~/a"}])
+        self._wing_with_aq(root, "alpha", "CONTEXT.md",
+                            ["what's the current focus", "what's blocked right now"])
+        rc, out, _ = run(root, "search", "current focus", "--slug", "alpha")
+        self.assertEqual(rc, 0)
+        self.assertIn("alpha/CONTEXT.md", out)
+        self.assertIn("current focus", out)
+
+    def test_absent_frontmatter_no_match(self):
+        root = make_vault([{"slug": "alpha", "globs": ["*/alpha*"], "memdir": "-a", "repo": "~/a"}])
+        out = run(root, "search", "anything at all here", "--slug", "alpha")[1]
+        self.assertIn("no matches", out)
+
+    def test_malformed_frontmatter_no_crash(self):
+        root = make_vault([{"slug": "alpha", "globs": ["*/alpha*"], "memdir": "-a", "repo": "~/a"}])
+        (root / "projects" / "alpha" / "BUGS.md").write_text(
+            '---\nanticipated_queries: "not a list"\n---\n# bugs\n')
+        rc, out, _ = run(root, "search", "bugs", "--slug", "alpha")
+        self.assertEqual(rc, 0)
+
+    def test_slug_scope_excludes_other_wings(self):
+        root = make_vault([
+            {"slug": "alpha", "globs": ["*/alpha*"], "memdir": "-a", "repo": "~/a"},
+            {"slug": "beta", "globs": ["*/beta*"], "memdir": "-b", "repo": "~/b"},
+        ])
+        self._wing_with_aq(root, "alpha", "DECISIONS.md", ["why did we pick postgres"])
+        self._wing_with_aq(root, "beta", "DECISIONS.md", ["why did we pick postgres"])
+        out = run(root, "search", "postgres", "--slug", "alpha")[1]
+        self.assertIn("alpha/DECISIONS.md", out)
+        self.assertNotIn("beta/DECISIONS.md", out)
+
+    def test_all_scope_includes_every_wing(self):
+        root = make_vault([
+            {"slug": "alpha", "globs": ["*/alpha*"], "memdir": "-a", "repo": "~/a"},
+            {"slug": "beta", "globs": ["*/beta*"], "memdir": "-b", "repo": "~/b"},
+        ])
+        self._wing_with_aq(root, "alpha", "DECISIONS.md", ["why did we pick postgres"])
+        self._wing_with_aq(root, "beta", "DECISIONS.md", ["why did we pick postgres"])
+        out = run(root, "search", "postgres", "--all")[1]
+        self.assertIn("alpha/DECISIONS.md", out)
+        self.assertIn("beta/DECISIONS.md", out)
+
+    def test_features_subdir_included(self):
+        root = make_vault([{"slug": "alpha", "globs": ["*/alpha*"], "memdir": "-a", "repo": "~/a"}])
+        self._wing_with_aq(root, "alpha", "features/billing.md",
+                            ["how does billing retry failed charges"])
+        out = run(root, "search", "billing retry", "--slug", "alpha")[1]
+        self.assertIn("alpha/features/billing.md", out)
+
+    def test_top_8_cap(self):
+        root = make_vault([{"slug": "alpha", "globs": ["*/alpha*"], "memdir": "-a", "repo": "~/a"}])
+        for i in range(10):
+            self._wing_with_aq(root, "alpha", f"features/f{i}.md", [f"widget topic {i}"])
+        out = run(root, "search", "widget topic", "--slug", "alpha")[1]
+        self.assertEqual(len(out.strip().splitlines()), 8)
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

@@ -20,6 +20,7 @@ Commands:
   doctor --system   verify the whole install: config, hooks, launchd, paths, sync; exit 1 if any red
   archive <slug>    set the wing's readme frontmatter status: archived
   unarchive <slug>  set it back to status: active
+  search <query> [--slug S] [--all]  keyword-overlap search over anticipated_queries frontmatter
 """
 import fnmatch
 import json
@@ -129,6 +130,97 @@ def wing_files_mtime(slug):
         return None
     mtimes = [p.stat().st_mtime for p in d.glob("*.md") if p.is_file()]
     return int(max(mtimes)) if mtimes else None
+
+
+_WORD_RE = re.compile(r"[a-z0-9]+")
+
+
+def _words(text):
+    return set(_WORD_RE.findall(text.lower()))
+
+
+def _frontmatter_block(text):
+    """Raw text between the first two '---' lines, or '' if there's no frontmatter block."""
+    lines = text.splitlines()
+    if not lines or lines[0].strip() != "---":
+        return ""
+    try:
+        end = lines[1:].index("---") + 1
+    except ValueError:
+        return ""
+    return "\n".join(lines[1:end])
+
+
+def anticipated_queries(path):
+    """Parse the anticipated_queries: YAML list from a doc's frontmatter. Never raises —
+    missing field, no frontmatter, or a malformed (non-list) value all return []."""
+    try:
+        text = path.read_text()
+    except OSError:
+        return []
+    block = _frontmatter_block(text)
+    if not block:
+        return []
+    out = []
+    in_list = False
+    for line in block.splitlines():
+        stripped = line.strip()
+        if stripped.startswith("anticipated_queries:"):
+            in_list = True
+            continue
+        if in_list and stripped.startswith("- "):
+            item = stripped[2:].strip().strip('"').strip("'").strip()
+            if item:
+                out.append(item)
+        elif in_list:
+            in_list = False
+    return out
+
+
+def _wing_docs(slug):
+    d = VAULT_PROJECTS / slug
+    if not d.is_dir():
+        return []
+    docs = list(d.glob("*.md"))
+    feat_dir = d / "features"
+    if feat_dir.is_dir():
+        docs += list(feat_dir.glob("*.md"))
+    return docs
+
+
+def cmd_search(args):
+    slug_filter = None
+    words = []
+    it = iter(args)
+    for a in it:
+        if a == "--slug":
+            slug_filter = next(it, None)
+        elif a == "--all":
+            pass
+        else:
+            words.append(a)
+    if not words:
+        print("usage: palace-map search <query> [--slug SLUG] [--all]")
+        sys.exit(2)
+    q_words = _words(" ".join(words))
+    slugs = [slug_filter] if slug_filter else [p["slug"] for p in load()]
+    results = []
+    for slug in slugs:
+        d = VAULT_PROJECTS / slug
+        if not d.is_dir():
+            continue
+        for doc in _wing_docs(slug):
+            rel = doc.relative_to(d)
+            for aq in anticipated_queries(doc):
+                score = len(q_words & _words(aq))
+                if score > 0:
+                    results.append((score, slug, str(rel), aq))
+    results.sort(key=lambda r: -r[0])
+    if not results:
+        print("no matches")
+        return
+    for score, slug, rel, aq in results[:8]:
+        print(f'{slug}/{rel} — "{aq}" ({score})')
 
 
 def cmd_resolve(args):
@@ -413,6 +505,7 @@ CMDS = {
     "resolve": cmd_resolve, "memdir": cmd_memdir, "repo": cmd_repo, "list": cmd_list,
     "activity": cmd_activity, "validate": cmd_validate, "render": cmd_render, "doctor": cmd_doctor,
     "archive": cmd_archive, "unarchive": cmd_unarchive, "quiz-status": cmd_quiz_status,
+    "search": cmd_search,
 }
 
 if __name__ == "__main__":
