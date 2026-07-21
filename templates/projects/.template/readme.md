@@ -34,3 +34,7 @@ What it does and who it's for.
 ```sh
 # commands to run locally
 ```
+
+## Features
+
+> Links to `features/{feature-slug}.md` deep-dives, added as they're created via `/palace:update`.

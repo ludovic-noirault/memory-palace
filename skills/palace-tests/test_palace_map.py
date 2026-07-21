@@ -81,6 +81,12 @@ class TemplateFrontmatterTests(unittest.TestCase):
             self.assertIn("anticipated_queries:", text, f"{name} missing anticipated_queries")
 
 
+class ReadmeFeaturesSectionTests(unittest.TestCase):
+    def test_readme_template_has_features_section(self):
+        text = (TEMPLATE_DIR / "readme.md").read_text()
+        self.assertIn("## Features", text)
+
+
 class ResolveTests(unittest.TestCase):
     def test_matches_and_nonmatch(self):
         root = make_vault([
