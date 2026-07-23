@@ -1,6 +1,8 @@
 ---
 tags: [project, glossary]
 project: {{PROJECT_NAME}}
+anticipated_queries:
+  - "what does this term mean"
 ---
 # Glossary — {{PROJECT_NAME}}
 

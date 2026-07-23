@@ -95,6 +95,16 @@ Then update only what actually changed:
 - **DECISIONS.md**: any decision inferable from recent commits or code patterns
 - **ARCHITECTURE.md / Critical Gotchas**: any new gotcha surfaced during exploration
 - **GLOSSARY.md**: invoke the `domain-modeling` skill against this session's conversation and code changes to spot new or changed domain terms. Write resolved terms into `GLOSSARY.md` using its `## [Term]` / `- **Definition**` / `- **Avoid**` / `- **More info**` format — **not** into `CONTEXT.md`, which in this wing already means "current focus," a different file than domain-modeling's own default glossary location. Append only new/changed terms; leave existing ones untouched unless they've demonstrably changed.
+- **`anticipated_queries` frontmatter**: for every doc actually rewritten above, regenerate its
+  `anticipated_queries` field to 2-5 short questions reflecting the doc's *new* content — replace
+  the list wholesale, don't append to it. Leave `anticipated_queries` untouched in docs this run
+  didn't touch.
+- **Feature docs** (`features/{feature-slug}.md`): if this session's work clearly centered on one
+  feature or domain area, ask the user whether to capture it in `features/{feature-slug}.md`
+  instead of `DECISIONS.md`/`ARCHITECTURE.md` — don't create one unprompted. On confirmation:
+  create the file if missing (same frontmatter conventions as the 6 core docs, including its own
+  `anticipated_queries`), update it surgically if it exists, and add a link under `readme.md`'s
+  `## Features` section if not already listed there.
 
 Be surgical — only write lines that genuinely changed. Do not rewrite files that are already accurate. Tell the user what was updated and what was already current.
 

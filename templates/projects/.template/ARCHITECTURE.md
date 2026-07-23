@@ -1,6 +1,9 @@
 ---
 tags: [project, architecture]
 project: {{PROJECT_NAME}}
+anticipated_queries:
+  - "what's the tech stack"
+  - "what are the critical gotchas"
 ---
 # Architecture — {{PROJECT_NAME}}
 

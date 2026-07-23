@@ -1,6 +1,9 @@
 ---
 tags: [project, context]
 project: {{PROJECT_NAME}}
+anticipated_queries:
+  - "what's the current focus"
+  - "what's blocked right now"
 ---
 # Context — {{PROJECT_NAME}}
 

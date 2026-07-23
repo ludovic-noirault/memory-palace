@@ -25,6 +25,9 @@ TABLE_END = "<!-- palace-map:table:end -->"
 WING_FILES = ["readme.md", "ARCHITECTURE.md", "BUGS.md", "CONTEXT.md", "DECISIONS.md", "GLOSSARY.md"]
 QUIZ_LOG_HEADER = "| Date | Score | Weak topics |\n|------|-------|-------------|\n"
 
+REPO_ROOT = Path(__file__).resolve().parents[2]
+TEMPLATE_DIR = REPO_ROOT / "templates" / "projects" / ".template"
+
 
 def make_wing(projects: Path, slug: str, status: str = "active"):
     d = projects / slug
@@ -68,6 +71,20 @@ def run(root, *args, extra_env=None, cwd=None):
         env.update(extra_env)
     r = subprocess.run([str(PALACE_MAP), *args], capture_output=True, text=True, env=env, cwd=cwd)
     return r.returncode, r.stdout, r.stderr
+
+
+class TemplateFrontmatterTests(unittest.TestCase):
+    def test_every_core_template_has_anticipated_queries(self):
+        for name in ("readme.md", "ARCHITECTURE.md", "BUGS.md", "CONTEXT.md",
+                     "DECISIONS.md", "GLOSSARY.md"):
+            text = (TEMPLATE_DIR / name).read_text()
+            self.assertIn("anticipated_queries:", text, f"{name} missing anticipated_queries")
+
+
+class ReadmeFeaturesSectionTests(unittest.TestCase):
+    def test_readme_template_has_features_section(self):
+        text = (TEMPLATE_DIR / "readme.md").read_text()
+        self.assertIn("## Features", text)
 
 
 class ResolveTests(unittest.TestCase):
@@ -301,6 +318,100 @@ class DoctorQuizNoteTests(unittest.TestCase):
             {"slug": "alpha", "globs": ["*/alpha*"], "memdir": "-a", "repo": str(repo)}]}, indent=2))
         out = run(root, "doctor")[1]
         self.assertIn("never quizzed", out)
+
+
+class SearchTests(unittest.TestCase):
+    def _wing_with_aq(self, root, slug, relpath, queries):
+        d = root / "projects" / slug / relpath
+        d.parent.mkdir(parents=True, exist_ok=True)
+        text = f"---\ntags: [project]\nproject: {slug}\nanticipated_queries:\n"
+        for q in queries:
+            text += f'  - "{q}"\n'
+        text += "---\n# doc\n"
+        d.write_text(text)
+
+    def test_present_frontmatter_matches(self):
+        root = make_vault([{"slug": "alpha", "globs": ["*/alpha*"], "memdir": "-a", "repo": "~/a"}])
+        self._wing_with_aq(root, "alpha", "CONTEXT.md",
+                            ["what's the current focus", "what's blocked right now"])
+        rc, out, _ = run(root, "search", "current focus", "--slug", "alpha")
+        self.assertEqual(rc, 0)
+        self.assertIn("alpha/CONTEXT.md", out)
+        self.assertIn("current focus", out)
+
+    def test_absent_frontmatter_no_match(self):
+        root = make_vault([{"slug": "alpha", "globs": ["*/alpha*"], "memdir": "-a", "repo": "~/a"}])
+        out = run(root, "search", "anything at all here", "--slug", "alpha")[1]
+        self.assertIn("no matches", out)
+
+    def test_malformed_frontmatter_no_crash(self):
+        root = make_vault([{"slug": "alpha", "globs": ["*/alpha*"], "memdir": "-a", "repo": "~/a"}])
+        (root / "projects" / "alpha" / "BUGS.md").write_text(
+            '---\nanticipated_queries: "not a list"\n---\n# bugs\n')
+        rc, out, _ = run(root, "search", "bugs", "--slug", "alpha")
+        self.assertEqual(rc, 0)
+
+    def test_non_utf8_file_no_crash(self):
+        """Verify anticipated_queries tolerates non-UTF-8 file content and doesn't crash.
+        This tests the fix for UnicodeDecodeError that wasn't caught before."""
+        root = make_vault([{"slug": "alpha", "globs": ["*/alpha*"], "memdir": "-a", "repo": "~/a"}])
+        # Write a file with non-UTF-8 bytes (\xe9 is invalid UTF-8 continuation).
+        # The file has valid frontmatter with anticipated_queries, but contains bad bytes.
+        (root / "projects" / "alpha" / "GLOSSARY.md").write_bytes(
+            b'---\ntags: [project]\nproject: alpha\nanticipated_queries:\n  - "caf\xe9 test"\n---\n# doc\n'
+        )
+        # Search should not crash; it should exit 0 and handle the file gracefully.
+        rc, out, _ = run(root, "search", "cafe", "--slug", "alpha")
+        self.assertEqual(rc, 0)
+
+    def test_slug_scope_excludes_other_wings(self):
+        root = make_vault([
+            {"slug": "alpha", "globs": ["*/alpha*"], "memdir": "-a", "repo": "~/a"},
+            {"slug": "beta", "globs": ["*/beta*"], "memdir": "-b", "repo": "~/b"},
+        ])
+        self._wing_with_aq(root, "alpha", "DECISIONS.md", ["why did we pick postgres"])
+        self._wing_with_aq(root, "beta", "DECISIONS.md", ["why did we pick postgres"])
+        out = run(root, "search", "postgres", "--slug", "alpha")[1]
+        self.assertIn("alpha/DECISIONS.md", out)
+        self.assertNotIn("beta/DECISIONS.md", out)
+
+    def test_all_scope_includes_every_wing(self):
+        root = make_vault([
+            {"slug": "alpha", "globs": ["*/alpha*"], "memdir": "-a", "repo": "~/a"},
+            {"slug": "beta", "globs": ["*/beta*"], "memdir": "-b", "repo": "~/b"},
+        ])
+        self._wing_with_aq(root, "alpha", "DECISIONS.md", ["why did we pick postgres"])
+        self._wing_with_aq(root, "beta", "DECISIONS.md", ["why did we pick postgres"])
+        out = run(root, "search", "postgres", "--all")[1]
+        self.assertIn("alpha/DECISIONS.md", out)
+        self.assertIn("beta/DECISIONS.md", out)
+
+    def test_features_subdir_included(self):
+        root = make_vault([{"slug": "alpha", "globs": ["*/alpha*"], "memdir": "-a", "repo": "~/a"}])
+        self._wing_with_aq(root, "alpha", "features/billing.md",
+                            ["how does billing retry failed charges"])
+        out = run(root, "search", "billing retry", "--slug", "alpha")[1]
+        self.assertIn("alpha/features/billing.md", out)
+
+    def test_top_8_cap(self):
+        root = make_vault([{"slug": "alpha", "globs": ["*/alpha*"], "memdir": "-a", "repo": "~/a"}])
+        for i in range(10):
+            self._wing_with_aq(root, "alpha", f"features/f{i}.md", [f"widget topic {i}"])
+        out = run(root, "search", "widget topic", "--slug", "alpha")[1]
+        self.assertEqual(len(out.strip().splitlines()), 8)
+
+    def test_tied_scores_ordered_deterministically(self):
+        root = make_vault([
+            {"slug": "beta", "globs": ["*/beta*"], "memdir": "-b", "repo": "~/b"},
+            {"slug": "alpha", "globs": ["*/alpha*"], "memdir": "-a", "repo": "~/a"},
+        ])
+        self._wing_with_aq(root, "beta", "features/z.md", ["widget topic tie"])
+        self._wing_with_aq(root, "alpha", "features/a.md", ["widget topic tie"])
+        expected = run(root, "search", "widget topic tie", "--all")[1]
+        for _ in range(5):
+            self.assertEqual(run(root, "search", "widget topic tie", "--all")[1], expected)
+        self.assertEqual(
+            expected.strip().splitlines()[0].split(" — ")[0], "alpha/features/a.md")
 
 
 if __name__ == "__main__":

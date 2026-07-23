@@ -24,6 +24,13 @@ Layer 1 is the load-bearing one: hand-curated, stable, strategic. A wing has six
 `domain-modeling` skill, loaded on demand rather than injected). A seventh file, `QUIZ_LOG.md`, is an
 append-only log — not hand-curated content — tracking `/palace:quiz` comprehension scores over time.
 
+Every wing doc also carries an `anticipated_queries` frontmatter field — 2-5 sample questions the
+doc answers, kept in sync by `/palace:update` — searchable via `palace-map search` /
+`/palace:search`, a dependency-free keyword-overlap lookup (no embeddings). An optional
+`features/{feature-slug}.md` layer holds deep dives on a specific feature or domain, additive to
+the 6 core files (never part of the 6-file completeness check), indexed from `readme.md`'s
+`## Features` section and included in the same search.
+
 ## Single source of truth
 
 Every project's identity — which working directories map to which wing, its auto-memory dir, its repo —

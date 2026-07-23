@@ -1,6 +1,9 @@
 ---
 tags: [project, bugs]
 project: {{PROJECT_NAME}}
+anticipated_queries:
+  - "what bugs are open"
+  - "are there any security issues"
 ---
 # Bugs — {{PROJECT_NAME}}
 

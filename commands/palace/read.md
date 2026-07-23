@@ -40,6 +40,10 @@ Read all 6 files in parallel:
 - `DECISIONS.md` — architectural decisions and rationale
 - `GLOSSARY.md` — domain terms and their definitions
 
+Feature-specific deep dives may also exist at `features/{feature-slug}.md` (see `readme.md`'s
+`## Features` section for the list) — not loaded by default here; load one only if the user's
+question clearly concerns that feature, or point them at `/palace:search`.
+
 ---
 
 ## Step 4 — Session brief
