@@ -102,9 +102,15 @@ Then update only what actually changed:
 - **Feature docs** (`features/{feature-slug}.md`): if this session's work clearly centered on one
   feature or domain area, ask the user whether to capture it in `features/{feature-slug}.md`
   instead of `DECISIONS.md`/`ARCHITECTURE.md` — don't create one unprompted. On confirmation:
-  create the file if missing (same frontmatter conventions as the 6 core docs, including its own
-  `anticipated_queries`), update it surgically if it exists, and add a link under `readme.md`'s
-  `## Features` section if not already listed there.
+  - If missing, create the file (same frontmatter conventions as the 6 core docs, including its own
+    `anticipated_queries`) and **draft real content into it** from what this session already knows —
+    the git log/status gathered above plus what was actually discussed or decided about the feature
+    this session (how it works, decisions made, gotchas hit, open questions). Do not leave section
+    headings empty and do not pad with speculative or placeholder content — write only what's
+    genuinely known; leave a section out if there's nothing to say yet. Tell the user the doc was
+    auto-drafted from this session and should be reviewed.
+  - If it exists, update it surgically as with the other docs in this step.
+  - Either way, add a link under `readme.md`'s `## Features` section if not already listed there.
 
 Be surgical — only write lines that genuinely changed. Do not rewrite files that are already accurate. Tell the user what was updated and what was already current.
 
