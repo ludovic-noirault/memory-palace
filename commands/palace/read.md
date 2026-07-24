@@ -1,8 +1,10 @@
 ---
-description: Load memory palace context for the active project — read-only, never creates or modifies anything
+description: Load memory palace context for the active project — read-only, never creates or modifies anything. Optionally accepts a trailing query to answer a specific question in the same command.
 ---
 
 You are loading the memory palace for the active project. The palace lives at `~/obsidian/projects/`. This command performs **zero writes** — no wing creation, no file edits, no session stamping. If anything is missing, tell the user and point at `/palace:create` or `/palace:update` instead of acting on their behalf.
+
+If the user invoked this with trailing text after `/palace:read` (e.g. `/palace:read how does auth work`), treat that text as `QUERY` and run Step 3.5 below. With no trailing text, `QUERY` is unset and behavior is identical to today — skip Step 3.5 entirely.
 
 ---
 
@@ -46,6 +48,27 @@ question clearly concerns that feature, or point them at `/palace:search`.
 
 ---
 
+## Step 3.5 — Answer the query (only if `QUERY` is set)
+
+Skip this step entirely if no query argument was given.
+
+1. Run:
+   ```bash
+   ~/.claude/hooks/palace-map search "{QUERY}" --slug {project-name}
+   ```
+2. Take the top 2–3 results with a non-zero score (the command already ranks highest-first and
+   caps at 8 — just use a prefix of the non-`no matches` lines).
+3. The 6 core docs are already loaded from Step 3 — do not re-read them. For any matched result
+   under `features/{feature-slug}.md` not already loaded, read it now.
+4. If the output was `no matches` (or scoring produced nothing above zero): do not skip the
+   answer. Synthesize from the 6 core docs already loaded in Step 3 instead, and say so explicitly
+   — this becomes the fallback note in Step 4's Answering section.
+
+Hold the synthesized answer and its source file(s) for the Step 4 brief — do not print anything
+yet.
+
+---
+
 ## Step 4 — Session brief
 
 Output:
@@ -64,6 +87,25 @@ Output:
 **Key gotchas**: {top 2-3 from ARCHITECTURE.md Critical Gotchas}
 
 **Next up**: {next 1-2 items from CONTEXT.md}
+```
+
+If `QUERY` was set (Step 3.5 ran), append immediately after the code block above:
+
+```
+**Answering: "{QUERY}"**
+{2-5 sentence synthesized answer, drawn from the docs identified in Step 3.5 — not a raw file dump}
+_Sourced from: {file1}, {file2}_
+```
+
+If Step 3.5's fallback path ran (no `anticipated_queries` match), use this form instead, still
+naming the core docs actually drawn from:
+
+```
+**Answering: "{QUERY}"**
+No wing doc's anticipated_queries matched this question — answering from the core docs already
+loaded; if this is a recurring question, /palace:update can add proper coverage for it.
+{2-5 sentence synthesized answer from the core docs}
+_Sourced from: {file1}, {file2}_
 ```
 
 ---
