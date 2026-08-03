@@ -11,6 +11,7 @@ Commands:
   resolve <pwd>     print slug whose glob matches <pwd> (first match wins); empty if none
   memdir  <slug>    print the auto-memory dir suffix for <slug>
   repo    <slug>    print the repo path for <slug> (with ~ expanded)
+  repos   <slug>    print one line per repo in the wing: remote<TAB>path<TAB>dir
   list              print all slugs, one per line
   activity <slug>   print last-activity epoch seconds (git HEAD commit time), or empty
   quiz-status <slug> print NUDGE if the wing hasn't been quizzed in QUIZ_NUDGE_DAYS+ AND has recent activity
@@ -59,6 +60,9 @@ def _cfg(key, default):
 VAULT_DIR = Path(os.path.expanduser(_cfg("VAULT_DIR", "~/obsidian")))
 CLAUDE_DIR = Path(os.path.expanduser(_cfg("PALACE_CLAUDE_DIR", "~/.claude")))
 VAULT_PROJECTS = VAULT_DIR / "projects"
+# Symlink farm letting spine address wings by git-remote name without those names
+# leaking into the vault. Lives OUTSIDE the vault so Obsidian never indexes it twice.
+SPINE_ROOTS = Path(os.path.expanduser(_cfg("SPINE_ROOTS", "~/.spine-roots")))
 MAPPING_JSON = VAULT_PROJECTS / "_mapping.json"
 MAPPING_MD = VAULT_PROJECTS / "_mapping.md"
 SESSIONS_DIR = VAULT_DIR / "claude-sessions"
@@ -86,6 +90,28 @@ def resolve(pwd):
             if fnmatch.fnmatchcase(pwd, g):
                 return p["slug"]
     return ""
+
+
+def repos(slug_or_entry):
+    """Git repos belonging to a wing, normalised.
+
+    A wing can span several repos (a monorepo of apps, say), which the older
+    single `repo` string can't express. Each entry is:
+      remote — how an external tool that keys off `git remote get-url origin`
+               names this repo (spine does exactly this, with no alias hook)
+      path   — local checkout
+      dir    — the wing subdirectory holding that repo's docs, kept readable
+               and deliberately decoupled from `remote`
+    Falls back to the legacy `repo` field so old mappings keep working."""
+    e = slug_or_entry if isinstance(slug_or_entry, dict) else entry(slug_or_entry)
+    if not e:
+        return []
+    if e.get("repos"):
+        return e["repos"]
+    if e.get("repo"):
+        base = os.path.basename(os.path.expanduser(e["repo"]))
+        return [{"remote": base, "path": e["repo"], "dir": e["slug"]}]
+    return []
 
 
 def git_commit_epoch(repo):
@@ -237,6 +263,12 @@ def cmd_repo(args):
     print(os.path.expanduser(e["repo"]) if e else "")
 
 
+def cmd_repos(args):
+    """Tab-separated remote/path/dir per repo — consumed by spine-palace-link.py."""
+    for r in repos(args[0] if args else ""):
+        print(f"{r.get('remote','')}\t{r.get('path','')}\t{r.get('dir','')}")
+
+
 def cmd_list(args):
     for p in load():
         print(p["slug"])
@@ -263,6 +295,18 @@ def _validate():
             errors.append(f"{p['slug']}: no memdir")
         if not (VAULT_PROJECTS / p["slug"]).is_dir():
             errors.append(f"{p['slug']}: mapping has no wing dir projects/{p['slug']}/ (dead config)")
+        for r in p.get("repos", []):
+            if not r.get("remote"):
+                errors.append(f"{p['slug']}: repos entry with no remote")
+        # A wing with no repo dirs at all simply isn't using spine — not a fault.
+        # Only once some exist does a missing sibling mean a repo silently has no docs.
+        present = [r for r in p.get("repos", [])
+                   if r.get("dir") and (VAULT_PROJECTS / p["slug"] / r["dir"]).is_dir()]
+        if present:
+            for r in p.get("repos", []):
+                if r.get("dir") and not (VAULT_PROJECTS / p["slug"] / r["dir"]).is_dir():
+                    warns.append(f"{p['slug']}: repo '{r['remote']}' has no docs dir "
+                                 f"{r['dir']}/ (spine auto-load will no-op there)")
     for d in sorted(VAULT_PROJECTS.iterdir()):
         if d.is_dir() and not d.name.startswith(".") and d.name not in slugs:
             warns.append(f"wing projects/{d.name}/ exists but is NOT in _mapping.json (unwired)")
@@ -430,6 +474,28 @@ def _doctor_system():
     # 6. _mapping.md table in sync with _mapping.json
     ck(_table_in_sync(), "_mapping.md table in sync (render = no-op)", "run `palace-map render`")
 
+    # 6b. spine reachability — only checked for wings that already have spine docs.
+    # Spine names a repo `basename $(git remote get-url origin)`, offers no alias hook,
+    # and its SessionStart hook exits 0 when {wing}/{remote}/ is absent. That failure is
+    # completely silent, so it is exactly the kind of rot this check exists to surface.
+    # The dir must be REAL: BSD `grep -r`, which spine uses to find notes, skips symlinks
+    # both as an argument and while descending — a symlink farm does not work here.
+    unreachable = []
+    for p in load():
+        wing = VAULT_PROJECTS / p["slug"]
+        if not any((wing / r["dir"]).is_dir() for r in repos(p) if r.get("dir")):
+            continue  # wing has no spine docs at all; nothing to check
+        for r in repos(p):
+            d = wing / r["dir"] if r.get("dir") else None
+            if d is None or not d.is_dir():
+                continue
+            if r["dir"] != r["remote"]:
+                unreachable.append(f"{p['slug']}/{r['dir']} (spine looks for '{r['remote']}')")
+            elif d.is_symlink():
+                unreachable.append(f"{p['slug']}/{r['remote']} (symlink; grep -r will skip it)")
+    ck(not unreachable, "spine dirs reachable (named after git remote, real dirs)",
+       "; ".join(unreachable[:4]))
+
     # 7. mapping validate
     errors, warns = _validate()
     ck(not errors, "mapping validate (no orphan mappings)", "; ".join(errors[:3]))
@@ -502,7 +568,8 @@ def cmd_unarchive(args):
 
 
 CMDS = {
-    "resolve": cmd_resolve, "memdir": cmd_memdir, "repo": cmd_repo, "list": cmd_list,
+    "resolve": cmd_resolve, "memdir": cmd_memdir, "repo": cmd_repo, "repos": cmd_repos,
+    "list": cmd_list,
     "activity": cmd_activity, "validate": cmd_validate, "render": cmd_render, "doctor": cmd_doctor,
     "archive": cmd_archive, "unarchive": cmd_unarchive, "quiz-status": cmd_quiz_status,
     "search": cmd_search,

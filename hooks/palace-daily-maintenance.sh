@@ -11,6 +11,11 @@ PALACE_CLAUDE_DIR="${_OV_PCD:-${PALACE_CLAUDE_DIR:-$HOME/.claude}}"
 export VAULT_DIR PALACE_CLAUDE_DIR   # so child python scripts inherit the config
 LOG="$PALACE_CLAUDE_DIR/hooks/palace-daily-maintenance.log"
 
+# Bound the log before appending: daily runs accumulate forever otherwise.
+if [ -f "$LOG" ] && [ "$(wc -c < "$LOG")" -gt 1048576 ]; then
+  tail -c 524288 "$LOG" > "$LOG.tmp" && mv "$LOG.tmp" "$LOG"
+fi
+
 {
   echo "=== $(date) ==="
 
@@ -28,6 +33,11 @@ LOG="$PALACE_CLAUDE_DIR/hooks/palace-daily-maintenance.log"
   echo "$SECRETS_OUT"
   SECRETS_SUMMARY=$(echo "$SECRETS_OUT" | tail -1)
 
+  echo "--- spine-palace-link (regenerate _features.md indexes, all wings) ---"
+  LINK_OUT=$(python3 "$PALACE_CLAUDE_DIR/hooks/spine-palace-link.py" --all 2>&1)
+  echo "$LINK_OUT"
+  LINK_SUMMARY=$(echo "$LINK_OUT" | tail -1)
+
   echo "--- palace-doctor (staleness / dormancy — report only, no changes) ---"
   DOCTOR_OUT=$("$PALACE_CLAUDE_DIR/hooks/palace-map" doctor 2>&1)
   echo "$DOCTOR_OUT"
@@ -36,4 +46,4 @@ LOG="$PALACE_CLAUDE_DIR/hooks/palace-daily-maintenance.log"
   echo ""
 } >> "$LOG" 2>&1
 
-osascript -e "display notification \"$HARVEST_SUMMARY — $SECRETS_SUMMARY — doctor: $DOCTOR_SUMMARY\" with title \"Palace maintenance ran\"" 2>/dev/null
+osascript -e "display notification \"$HARVEST_SUMMARY — $SECRETS_SUMMARY — doctor: $DOCTOR_SUMMARY — $LINK_SUMMARY\" with title \"Palace maintenance ran\"" 2>/dev/null
