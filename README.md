@@ -27,6 +27,7 @@ It contains **no content**: your project wings, session transcripts, and auto-me
 | 1 — Palace | Hand-curated per-project wings (5 files: readme/ARCHITECTURE/BUGS/CONTEXT/DECISIONS) | `$VAULT/projects/{slug}/` |
 | 2 — Auto-memory | Claude Code native per-project memory, synced from wings | `~/.claude/projects/*/memory/` |
 | 3 — Sessions + recall | Session transcripts + QMD search (**external**, see Prerequisites) | `$VAULT/claude-sessions/` |
+| 4 — Spine bridge | Feature-level depth docs, indexed into the wing (**external + optional**) | `$VAULT/projects/{slug}/{repo}/{feature}/` |
 
 Identity for every project lives in **one** file, `$VAULT/projects/_mapping.json`, resolved by
 `palace-map`. No hand-synced hook case-lists.
@@ -52,6 +53,11 @@ removes the wiring (your wings and content are never touched).
   for the BM25 index. Install those separately. Until then, the session-sync/index Stop hooks are
   no-ops and `palace-map doctor --system` will flag the missing `claude-sessions` path — the palace
   itself (Layers 1 & 2) works without them.
+- **Layer 4 is external and optional** — [`spine`](https://github.com/nodewarrior/spine) writes
+  per-feature docs under a wing. `hooks/spine-palace-link.py` bridges the two: it generates a
+  `_features.md` index in the wing, stamps `wing: {slug}` into each spine doc's frontmatter, and adds a
+  pointer from the wing's root docs to the index. Wings without spine docs are skipped, so `--all` is
+  safe to run across the whole vault. Without spine installed, nothing happens.
 - macOS (`launchctl` for the daily maintenance job; `stat -f` in the staleness guard).
 - `python3` (stdlib only — no pip installs) and `git`.
 
