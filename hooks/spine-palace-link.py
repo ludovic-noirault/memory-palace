@@ -13,6 +13,7 @@ Usage:
   spine-palace-link.py <wing-dir> [--dry-run]
   spine-palace-link.py --all [--dry-run]      # every wing under projects/
 """
+import json
 import os
 import re
 import sys
@@ -40,6 +41,25 @@ def vault_prefix(wing):
         cur = parent
 
 
+def repo_labels(wing):
+    """dir -> human label, from _mapping.json.
+
+    Spine forces the on-disk dir to be the git remote basename (`frontend`,
+    `sentinelles_de_la_nature`), which reads badly. The mapping can carry a
+    `label` so the generated index shows the name a human would use."""
+    mapping = os.path.join(os.path.dirname(wing), "_mapping.json")
+    if not os.path.exists(mapping):
+        return {}
+    try:
+        with open(mapping, encoding="utf-8") as fh:
+            projects = json.load(fh)["projects"]
+    except (OSError, ValueError, KeyError):
+        return {}
+    e = next((p for p in projects if p["slug"] == os.path.basename(wing)), None)
+    return {r["dir"]: r.get("label") or r["dir"]
+            for r in (e or {}).get("repos", []) if r.get("dir")}
+
+
 def scan(wing):
     """-> {feature: {repo: [(title, wikilink_target)]}}"""
     prefix = vault_prefix(wing)
@@ -65,7 +85,8 @@ def scan(wing):
     return features
 
 
-def render_index(wing_name, features):
+def render_index(wing_name, features, labels=None):
+    labels = labels or {}
     total = sum(len(d) for r in features.values() for d in r.values())
     out = [
         "---",
@@ -85,13 +106,13 @@ def render_index(wing_name, features):
     for feat in sorted(features):
         repos = features[feat]
         count = sum(len(v) for v in repos.values())
-        spread = ", ".join(f"{r} ({len(repos[r])})" for r in sorted(repos))
+        spread = ", ".join(f"{labels.get(r, r)} ({len(repos[r])})" for r in sorted(repos))
         out.append(f"## {feat}")
         out.append(f"*{count} docs across {spread}*")
         out.append("")
         for repo in sorted(repos):
             for title, target in repos[repo]:
-                out.append(f"- `{repo}` [[{target}|{title}]]")
+                out.append(f"- `{labels.get(repo, repo)}` [[{target}|{title}]]")
         out.append("")
     out.append(END)
     return "\n".join(out) + "\n"
@@ -188,7 +209,7 @@ def process(wing, dry):
     wing_name = os.path.basename(wing)
     prefix = vault_prefix(wing)
     features = scan(wing)
-    index_text = render_index(wing_name, features)
+    index_text = render_index(wing_name, features, repo_labels(wing))
     index_path = os.path.join(wing, INDEX)
 
     upped = 0

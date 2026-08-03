@@ -132,6 +132,52 @@ class ValidateTests(unittest.TestCase):
         self.assertIn("WARN", out)
 
 
+class ReposTests(unittest.TestCase):
+    """A wing can span several git repos; spine keys off the remote name."""
+
+    ALPHA = {"slug": "alpha", "globs": ["*/alpha*"], "memdir": "-a", "repo": "~/a"}
+
+    def test_falls_back_to_legacy_repo_field(self):
+        root = make_vault([dict(self.ALPHA)])
+        rc, out, _ = run(root, "repos", "alpha")
+        self.assertEqual(rc, 0)
+        # remote defaults to the checkout's basename, dir to the slug
+        self.assertEqual(out.strip().split("\t"), ["a", "~/a", "alpha"])
+
+    def test_lists_every_declared_repo(self):
+        entry = dict(self.ALPHA, repos=[
+            {"remote": "api", "path": "~/a/api", "dir": "api"},
+            {"remote": "web", "path": "~/a/web", "dir": "web"},
+        ])
+        root = make_vault([entry])
+        rc, out, _ = run(root, "repos", "alpha")
+        self.assertEqual(rc, 0)
+        self.assertEqual([l.split("\t")[0] for l in out.strip().splitlines()], ["api", "web"])
+
+    def test_no_docs_dirs_is_not_a_warning(self):
+        # a wing that simply doesn't use spine must stay quiet
+        entry = dict(self.ALPHA, repos=[{"remote": "api", "path": "~/a/api", "dir": "api"}])
+        root = make_vault([entry])
+        rc, out, _ = run(root, "validate")
+        self.assertEqual(rc, 0)
+        self.assertNotIn("WARN", out)
+
+    def test_missing_sibling_dir_warns(self):
+        # once one repo has docs, a declared sibling without them means spine
+        # auto-load silently no-ops there — that must be loud
+        entry = dict(self.ALPHA, repos=[
+            {"remote": "api", "path": "~/a/api", "dir": "api"},
+            {"remote": "web", "path": "~/a/web", "dir": "web"},
+        ])
+        root = make_vault([entry])
+        (root / "projects" / "alpha" / "api").mkdir()
+        rc, out, _ = run(root, "validate")
+        self.assertEqual(rc, 0)
+        self.assertIn("WARN", out)
+        self.assertIn("web", out)
+        self.assertNotIn("'api' has no docs dir", out)
+
+
 class RenderTests(unittest.TestCase):
     def test_idempotent(self):
         root = make_vault([{"slug": "alpha", "globs": ["*/alpha*"], "memdir": "-a", "repo": "~/a"}])

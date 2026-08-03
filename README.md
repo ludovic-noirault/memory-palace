@@ -32,6 +32,12 @@ It contains **no content**: your project wings, session transcripts, and auto-me
 Identity for every project lives in **one** file, `$VAULT/projects/_mapping.json`, resolved by
 `palace-map`. No hand-synced hook case-lists.
 
+A wing can span several git repos. Each is declared under `repos` with the name an external tool sees
+(`remote`, i.e. `basename $(git remote get-url origin)`), its checkout `path`, the wing subdirectory
+`dir` holding its docs, and an optional human `label`. `palace-map repos <slug>` prints them; the legacy
+single `repo` string still works. See [Layer 4](docs/ARCHITECTURE.md#why-the-wings-repo-dirs-are-named-after-git-remotes)
+for why `dir` has to match `remote` and has to be a real directory.
+
 ## Install
 
 ```sh
