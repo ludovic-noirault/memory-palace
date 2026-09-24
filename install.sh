@@ -39,8 +39,14 @@ cp -p "$REPO"/commands/palace.md "$CLAUDE/commands/palace.md"
 cp -p "$REPO"/commands/palace/* "$CLAUDE/commands/palace/"
 cp -p "$REPO"/skills/sync-claude-sessions/scripts/* "$CLAUDE/skills/sync-claude-sessions/scripts/"
 cp -p "$REPO"/skills/recall/scripts/* "$CLAUDE/skills/recall/scripts/"
-cp -p "$REPO"/skills/palace-tests/* "$CLAUDE/skills/palace-tests/"
+# files only: running the suite leaves a git-ignored __pycache__/ that cp would abort on
+find "$REPO/skills/palace-tests" -maxdepth 1 -type f -exec cp -p {} "$CLAUDE/skills/palace-tests/" \;
 chmod +x "$CLAUDE/hooks/palace-map" "$CLAUDE"/hooks/*.sh "$CLAUDE/skills/palace-tests/run.sh" 2>/dev/null || true
+# sha256 of every deployed engine file: `palace-map doctor --system` flags a later hand edit
+# in ~/.claude, which the next install would silently overwrite.
+( cd "$REPO" && ls hooks/* commands/palace.md commands/palace/* \
+    skills/sync-claude-sessions/scripts/* skills/recall/scripts/* ) \
+  | ( cd "$CLAUDE" && xargs shasum -a 256 ) > "$CLAUDE/.palace-manifest"
 echo "  engine files deployed"
 
 # 2. vault skeleton — create-if-missing only, never overwrite existing content

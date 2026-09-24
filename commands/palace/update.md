@@ -8,7 +8,7 @@ You are updating the memory palace wing for the active project. The palace lives
 
 ## Step 1 — Identify the project
 
-Run `pwd`. Read `~/obsidian/projects/_mapping.md` and match `$PWD` against the "SessionStart/hook `$PWD` match" column (glob patterns, same semantics as bash `case`). No match → fall back to the last path component of `$PWD` as the project name.
+Run `~/.claude/hooks/palace-map resolve "$PWD"`. It prints the wing slug from `_mapping.json`, the single source of project identity (first matching glob wins). Empty output → fall back to the last path component of `$PWD` as the project name.
 
 Set `WING=~/obsidian/projects/{project-name}`.
 
@@ -29,12 +29,12 @@ Run /palace:create first.
 
 Try `$CLAUDE_SESSION_ID` first:
 ```bash
-grep -rl "$CLAUDE_SESSION_ID" ~/obsidian/claude-sessions/*.md 2>/dev/null | head -1
+grep -rl --include="*.md" "$CLAUDE_SESSION_ID" ~/obsidian/claude-sessions/ 2>/dev/null | head -1
 ```
 
 If empty (env var unavailable in Bash tool), fall back to the most recently modified session file with `projects: []` unset:
 ```bash
-ls -t ~/obsidian/claude-sessions/*.md | head -20 | xargs grep -l "^projects: \[\]" | head -1
+find ~/obsidian/claude-sessions -name "*.md" -mtime -2 -exec grep -l --null "^projects: \[\]" {} + 2>/dev/null | xargs -0 ls -t | head -1
 ```
 
 Once found, update the `projects` frontmatter field — replace `projects: []` with:
@@ -92,25 +92,29 @@ Explore the current project state for anything new or changed since the wing was
 Then update only what actually changed:
 - **CONTEXT.md**: Current Focus, Recent Work table, Next Up, Blocked, and replace `## Open MRs` with the freshly-fetched table from Step 6 (add the section if missing)
 - **BUGS.md**: newly discovered or resolved bugs
-- **DECISIONS.md**: any decision inferable from recent commits or code patterns
+- **DECISIONS.md**: any decision inferable from recent commits or code patterns.
+  Before appending, check whether a listed decision has been reversed by the code —
+  if so, mark it `**Status:** Superseded by [[D-nnn]] (date) — reason` rather than
+  leaving it standing next to its replacement.
 - **ARCHITECTURE.md / Critical Gotchas**: any new gotcha surfaced during exploration
 - **GLOSSARY.md**: invoke the `domain-modeling` skill against this session's conversation and code changes to spot new or changed domain terms. Write resolved terms into `GLOSSARY.md` using its `## [Term]` / `- **Definition**` / `- **Avoid**` / `- **More info**` format — **not** into `CONTEXT.md`, which in this wing already means "current focus," a different file than domain-modeling's own default glossary location. Append only new/changed terms; leave existing ones untouched unless they've demonstrably changed.
 - **`anticipated_queries` frontmatter**: for every doc actually rewritten above, regenerate its
   `anticipated_queries` field to 2-5 short questions reflecting the doc's *new* content — replace
   the list wholesale, don't append to it. Leave `anticipated_queries` untouched in docs this run
   didn't touch.
-- **Feature docs** (`features/{feature-slug}.md`): if this session's work clearly centered on one
-  feature or domain area, ask the user whether to capture it in `features/{feature-slug}.md`
-  instead of `DECISIONS.md`/`ARCHITECTURE.md` — don't create one unprompted. On confirmation:
-  - If missing, create the file (same frontmatter conventions as the 6 core docs, including its own
-    `anticipated_queries`) and **draft real content into it** from what this session already knows —
-    the git log/status gathered above plus what was actually discussed or decided about the feature
-    this session (how it works, decisions made, gotchas hit, open questions). Do not leave section
-    headings empty and do not pad with speculative or placeholder content — write only what's
-    genuinely known; leave a section out if there's nothing to say yet. Tell the user the doc was
-    auto-drafted from this session and should be reviewed.
-  - If it exists, update it surgically as with the other docs in this step.
-  - Either way, add a link under `readme.md`'s `## Features` section if not already listed there.
+- **Feature docs go to spine, not to the wing.** Feature depth belongs to spine
+  (`<wing>/<repo>/<feature>/`); the wing's root docs hold the cross-cutting view and point at it.
+  If this session's work clearly centered on one feature, ask the user whether to capture it as a
+  spine doc — don't create one unprompted. On confirmation:
+  - Pick the feature folder from `_features.md` (the generated spine index); only create a new
+    feature when none matches. Write it through `/spine-capture`.
+  - Draft real content from what this session already knows (how it works, decisions, gotchas,
+    open questions). No empty headings, no speculative or placeholder content. Tell the user the
+    doc was auto-drafted from this session and should be reviewed.
+  - Refresh the index with `python3 ~/.claude/hooks/spine-palace-link.py {project-name}`, then
+    point the relevant root-doc line at the new doc with a wikilink.
+  - Never create `features/{feature-slug}.md` in the wing. Existing docs there are legacy:
+    update them surgically if they are the ones this session touched, but add nothing new.
 
 Be surgical — only write lines that genuinely changed. Do not rewrite files that are already accurate. Tell the user what was updated and what was already current.
 

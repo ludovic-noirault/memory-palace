@@ -86,7 +86,9 @@ PY
 }
 
 build_plist() {
-  local node_dir; node_dir="$(dirname "$(command -v node 2>/dev/null || echo /usr/local/bin/node)")"
+  # `type -P`, not `command -v`: nvm's lazy loader defines `node` as a shell function, and
+  # `command -v` would return the function name instead of a binary path.
+  local node_dir; node_dir="$(dirname "$(type -P node 2>/dev/null || echo /usr/local/bin/node)")"
   cat <<PLISTEOF
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">

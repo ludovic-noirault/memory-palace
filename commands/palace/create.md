@@ -2,7 +2,7 @@
 description: Create a new memory palace wing for the active project and wire it into every hook + the identity map
 ---
 
-You are creating a new memory palace wing. The palace lives at `~/obsidian/projects/`. This command only runs when a wing does not already exist for the active project — it never overwrites an existing one. Wiring a new project touches 5 files across the system; be precise about insertion points, and confirm the slug/pattern with the user before writing anything (this is the one ambiguous step worth a pause).
+You are creating a new memory palace wing. The palace lives at `~/obsidian/projects/`. This command only runs when a wing does not already exist for the active project — it never overwrites an existing one. Wiring a new project touches several files across the system; be precise about insertion points, and confirm the slug/pattern with the user before writing anything (this is the one ambiguous step worth a pause).
 
 ---
 
@@ -52,8 +52,26 @@ If `validate` reports an ERROR or `resolve` prints the wrong slug (glob collisio
 
 ---
 
+## Step 3b — Wire SPINE_VAULT_PATH (mandatory, do not skip)
+
+Without this, the Spine plugin's episode hook falls back to `~/.spine/config.json`'s global `vaultPath` and silently files this project's session episodes into whichever aile happens to be the global default — a real incident, not a hypothetical (found 2026-08-10: `grocery-tools` episodes were landing in `fne`'s vault; `toovalu-impact`, `boulangerie`, `library-destiny-migration`, and `dev` were exposed to the same silent misrouting).
+
+1. Read `$PWD/.claude/settings.json` if it exists (preserve its other keys — `hooks`, `additionalDirectories`, etc.); otherwise you're creating it fresh.
+2. Ensure it has:
+   ```json
+   {
+     "env": {
+       "SPINE_VAULT_PATH": "{WING}"
+     }
+   }
+   ```
+   (merge into the existing `env` block if one already exists — don't clobber other env vars.)
+3. Confirm: `grep SPINE_VAULT_PATH "$PWD/.claude/settings.json"` should print the wing path.
+
+---
+
 ## Step 4 — Report + brief
 
-Tell the user: **"Wing created for {slug}, wired via _mapping.json (one source — validate passed)."**
+Tell the user: **"Wing created for {slug}, wired via _mapping.json (one source — validate passed), SPINE_VAULT_PATH set."**
 
 Then print the session brief (same format as `/palace:read` Step 4, plus recent sessions and open MRs — Steps 5–6 of that command).

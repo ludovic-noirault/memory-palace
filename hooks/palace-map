@@ -21,9 +21,10 @@ Commands:
   doctor --system   verify the whole install: config, hooks, launchd, paths, sync; exit 1 if any red
   archive <slug>    set the wing's readme frontmatter status: archived
   unarchive <slug>  set it back to status: active
-  search <query> [--slug S] [--all]  keyword-overlap search over anticipated_queries frontmatter
+  search <query> [--slug S] [--all]  keyword-overlap search over anticipated_queries (spine: answers)
 """
 import fnmatch
+import hashlib
 import json
 import os
 import re
@@ -178,8 +179,9 @@ def _frontmatter_block(text):
 
 
 def anticipated_queries(path):
-    """Parse the anticipated_queries: YAML list from a doc's frontmatter. Never raises —
-    missing field, no frontmatter, or a malformed (non-list) value all return []."""
+    """Parse the anticipated_queries: YAML list from a doc's frontmatter (`answers:` in spine
+    docs). Never raises — missing field, no frontmatter, or a malformed (non-list) value all
+    return []."""
     try:
         text = path.read_text(errors="ignore")
     except OSError:
@@ -191,7 +193,7 @@ def anticipated_queries(path):
     in_list = False
     for line in block.splitlines():
         stripped = line.strip()
-        if stripped.startswith("anticipated_queries:"):
+        if stripped.startswith(("anticipated_queries:", "answers:")):
             in_list = True
             continue
         if in_list and stripped.startswith("- "):
@@ -207,10 +209,10 @@ def _wing_docs(slug):
     d = VAULT_PROJECTS / slug
     if not d.is_dir():
         return []
-    docs = list(d.glob("*.md"))
-    feat_dir = d / "features"
-    if feat_dir.is_dir():
-        docs += list(feat_dir.glob("*.md"))
+    docs = list(d.glob("*.md")) + list((d / "features").glob("*.md"))
+    for r in repos(slug):  # spine: <wing>/<repo dir>/<feature>/*.md, dirs declared in _mapping.json
+        if r.get("dir"):
+            docs += list((d / r["dir"]).glob("*/*.md"))
     return docs
 
 
@@ -496,7 +498,23 @@ def _doctor_system():
     ck(not unreachable, "spine dirs reachable (named after git remote, real dirs)",
        "; ".join(unreachable[:4]))
 
-    # 7. mapping validate
+    # 7. deployed engine files unchanged since install. install.sh writes the manifest; an
+    # edit made in ~/.claude instead of the repo is lost at the next install.
+    manifest = CLAUDE_DIR / ".palace-manifest"
+    if manifest.is_file():
+        edited = []
+        for line in manifest.read_text().splitlines():
+            digest, _, rel = line.partition("  ")
+            try:
+                current = hashlib.sha256((CLAUDE_DIR / rel).read_bytes()).hexdigest()
+            except OSError:
+                current = None
+            if rel and current != digest:
+                edited.append(rel)
+        ck(not edited, "deployed engine files match the last install",
+           "edited in ~/.claude, port to ~/memory-palace then reinstall: " + ", ".join(edited[:4]))
+
+    # 8. mapping validate
     errors, warns = _validate()
     ck(not errors, "mapping validate (no orphan mappings)", "; ".join(errors[:3]))
     if warns:
