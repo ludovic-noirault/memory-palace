@@ -20,4 +20,5 @@ tree.
     python3 -c "import ast,sys; [ast.parse(open(f).read(), f) for f in sys.argv[1:]]" hooks/scan-secrets.py hooks/spine-palace-link.py
     bash -n hooks/index-sessions.sh
     bash -n hooks/palace-context.sh
+    bash -n hooks/palace-install.sh
     bash -n install.sh

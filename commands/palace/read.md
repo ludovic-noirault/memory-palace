@@ -10,10 +10,10 @@ If the user invoked this with trailing text after `/palace:read` (e.g. `/palace:
 
 ## Step 1 — Identify the project
 
-Run `pwd`. Read `~/obsidian/projects/_mapping.md` and match `$PWD` against the "SessionStart/hook `$PWD` match" column (glob patterns, same semantics as bash `case`).
+Run `~/.claude/hooks/palace-map resolve "$PWD"`. It prints the wing slug from `_mapping.json`, the single source of project identity (first matching glob wins).
 
-- Match found → that row's palace wing name is the project.
-- No match → fall back to the last path component of `$PWD` as a guess, but do not treat this as confirmed — say so in the brief ("no entry in _mapping.md for this path, guessing project = `{name}`").
+- Slug printed → that is the project.
+- Empty output → fall back to the last path component of `$PWD` as a guess, but do not treat this as confirmed — say so in the brief ("no entry in _mapping.json for this path, guessing project = `{name}`").
 
 Set `WING=~/obsidian/projects/{project-name}`.
 
@@ -42,9 +42,9 @@ Read all 6 files in parallel:
 - `DECISIONS.md` — architectural decisions and rationale
 - `GLOSSARY.md` — domain terms and their definitions
 
-Feature-specific deep dives may also exist at `features/{feature-slug}.md` (see `readme.md`'s
-`## Features` section for the list) — not loaded by default here; load one only if the user's
-question clearly concerns that feature, or point them at `/palace:search`.
+Feature-specific depth lives in spine docs under `<repo>/<feature>/`, indexed by the wing's
+`_features.md`, plus a few legacy docs under `features/`. Not loaded by default here; load one
+only if the user's question clearly concerns that feature, or point them at `/palace:search`.
 
 ---
 
@@ -59,7 +59,7 @@ Skip this step entirely if no query argument was given.
 2. Take the top 2–3 results with a non-zero score (the command already ranks highest-first and
    caps at 8 — just use a prefix of the non-`no matches` lines).
 3. The 6 core docs are already loaded from Step 3 — do not re-read them. For any matched result
-   under `features/{feature-slug}.md` not already loaded, read it now.
+   outside them (a spine doc under `<repo>/<feature>/`, or a legacy `features/` doc), read it now.
 4. If the output was `no matches` (or scoring produced nothing above zero): do not skip the
    answer. Synthesize from the 6 core docs already loaded in Step 3 instead, and say so explicitly
    — this becomes the fallback note in Step 4's Answering section.
@@ -113,7 +113,7 @@ _Sourced from: {file1}, {file2}_
 ## Step 5 — Recent sessions (append to brief)
 
 ```bash
-grep -rl "{project-name}" ~/obsidian/claude-sessions/*.md 2>/dev/null | sort -r | head -3
+grep -rl --include="*.md" "{project-name}" ~/obsidian/claude-sessions/ 2>/dev/null | awk -F/ '{print $NF "\t" $0}' | sort -r | cut -f2 | head -3
 ```
 
 For each file found, extract `date`, `title`, `status` from YAML frontmatter. Truncate title to 40 chars, strip any XML-like tags. If any found, append:

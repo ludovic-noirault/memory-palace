@@ -11,7 +11,7 @@ confirming retention of facts already stored in the wing, not pressure-testing a
 
 ## Step 1 — Identify the project
 
-Run `pwd`. Read `~/obsidian/projects/_mapping.md` and match `$PWD` against the "SessionStart/hook `$PWD` match" column (glob patterns, same semantics as bash `case`). No match → fall back to the last path component of `$PWD` as the project name, and say so.
+Run `~/.claude/hooks/palace-map resolve "$PWD"`. It prints the wing slug from `_mapping.json`, the single source of project identity (first matching glob wins). Empty output → fall back to the last path component of `$PWD` as the project name, and say so.
 
 Set `WING=~/obsidian/projects/{project-name}`.
 

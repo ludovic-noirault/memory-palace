@@ -10,7 +10,7 @@ Wing-agnostic: nothing here is specific to one project. A wing with no spine
 feature docs is skipped, so this is safe to run across the whole vault.
 
 Usage:
-  spine-palace-link.py <wing-dir> [--dry-run]
+  spine-palace-link.py <wing-dir>|<wing-slug> [--dry-run]
   spine-palace-link.py --all [--dry-run]      # every wing under projects/
 """
 import json
@@ -196,8 +196,12 @@ def main():
         return
 
     if not args:
-        sys.exit("usage: spine-palace-link.py <wing-dir>|--all [--dry-run]")
+        sys.exit("usage: spine-palace-link.py <wing-dir>|<wing-slug>|--all [--dry-run]")
     wing = os.path.abspath(os.path.expanduser(args[0]))
+    # A bare name is a wing slug, even if the cwd holds a directory of that name
+    # (e.g. the project's code repo).
+    if os.sep not in args[0] and os.path.isdir(os.path.join(projects_dir(), args[0])):
+        wing = os.path.join(projects_dir(), args[0])
     if not os.path.isdir(wing):
         sys.exit(f"not a directory: {wing}")
     if not scan(wing):
