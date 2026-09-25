@@ -437,7 +437,7 @@ def _doctor_system():
     for needle, label in [
         ("palace-context.sh", "SessionStart hook (palace-context.sh)"),
         ("palace-map resolve", "Stop hook (palace-map → palace-to-memory)"),
-        ("claude-sessions", "Stop hook (session sync)"),
+        ("palace-sync-sessions.sh", "Stop hook (session sync)"),
         ("index-sessions.sh", "Stop hook (QMD index)"),
         ("palace-reminder.sh", "SessionEnd hook (reminder)"),
     ]:
@@ -455,6 +455,7 @@ def _doctor_system():
         ("hooks/palace-map", CLAUDE_DIR), ("hooks/palace-context.sh", CLAUDE_DIR),
         ("hooks/palace-reminder.sh", CLAUDE_DIR), ("hooks/palace-daily-maintenance.sh", CLAUDE_DIR),
         ("hooks/scan-secrets.py", CLAUDE_DIR), ("hooks/index-sessions.sh", CLAUDE_DIR),
+        ("hooks/palace-sync-sessions.sh", CLAUDE_DIR),
         ("skills/sync-claude-sessions/scripts/palace-to-memory", CLAUDE_DIR),
         ("skills/sync-claude-sessions/scripts/claude-sessions", CLAUDE_DIR),
         ("skills/recall/scripts/palace-harvest.py", CLAUDE_DIR),

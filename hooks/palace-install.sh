@@ -35,8 +35,8 @@ hooks = data.setdefault("hooks", {})
 PALACE = {
     "SessionStart": [("palace-context.sh", {"type": "command", "command": f"{claude}/hooks/palace-context.sh"})],
     "Stop": [
-        ("skills/sync-claude-sessions/scripts/claude-sessions sync",
-         {"type": "command", "command": f"VAULT_DIR={vault} python3 {claude}/skills/sync-claude-sessions/scripts/claude-sessions sync", "timeout": 10}),
+        ("palace-sync-sessions.sh",
+         {"type": "command", "command": f"bash {claude}/hooks/palace-sync-sessions.sh", "timeout": 30}),
         ("index-sessions.sh",
          {"type": "command", "command": f"bash {claude}/hooks/index-sessions.sh >> {claude}/hooks/index-sessions.log 2>&1", "timeout": 30}),
         ("palace-map resolve",
@@ -44,6 +44,20 @@ PALACE = {
     ],
     "SessionEnd": [("palace-reminder.sh", {"type": "command", "command": f"bash {claude}/hooks/palace-reminder.sh", "timeout": 5})],
 }
+
+# Commands a canonical hook above replaced: install removes them so nothing runs twice.
+RETIRED = {"Stop": ["skills/sync-claude-sessions/scripts/claude-sessions sync"]}
+
+def remove(event, needle):
+    removed = False
+    for group in list(hooks.get(event, [])):
+        before = len(group.get("hooks", []))
+        group["hooks"] = [h for h in group.get("hooks", []) if needle not in h.get("command", "")]
+        removed |= len(group["hooks"]) != before
+    hooks[event] = [g for g in hooks.get(event, []) if g.get("hooks")]
+    if not hooks[event]:
+        del hooks[event]
+    return removed
 
 def has(event, needle):
     for group in hooks.get(event, []):
@@ -54,6 +68,9 @@ def has(event, needle):
 
 changed = False
 if action == "install":
+    for event, needles in RETIRED.items():
+        for needle in needles:
+            changed |= remove(event, needle)
     for event, specs in PALACE.items():
         for needle, hook in specs:
             if has(event, needle) is None:
@@ -68,14 +85,7 @@ if action == "install":
 elif action == "uninstall":
     for event, specs in PALACE.items():
         for needle, _ in specs:
-            for group in list(hooks.get(event, [])):
-                before = len(group.get("hooks", []))
-                group["hooks"] = [h for h in group.get("hooks", []) if needle not in h.get("command", "")]
-                if len(group["hooks"]) != before:
-                    changed = True
-            hooks[event] = [g for g in hooks.get(event, []) if g.get("hooks")]
-            if not hooks[event]:
-                del hooks[event]
+            changed |= remove(event, needle)
 
 if changed:
     with open(settings, "w") as f:
