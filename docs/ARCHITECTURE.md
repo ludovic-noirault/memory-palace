@@ -58,7 +58,8 @@ The point of the system is that it stays *true*, not just that it stores things:
 - **`palace-map doctor --system`** — verifies the whole install: config present, hooks registered in
   `settings.json`, launchd job loaded, referenced paths exist, every wing has its 6 files, `_mapping.md`
   in sync, validate clean, deployed engine files unchanged since the last install (sha256 manifest
-  `install.sh` writes to `~/.claude/.palace-manifest`). One green/red report; non-zero exit on any red.
+  `install.sh` writes to `~/.claude/.palace-manifest`), and `qmd status` exits 0, since qmd can resolve
+  on PATH and still crash on a node ABI mismatch. One green/red report; non-zero exit on any red.
 - **Staleness guard** — `palace-context.sh` appends a warning at SessionStart when the injected context is
   behind the repo, so you never silently trust a stale wing.
 - **Tests** — `skills/palace-tests/` (stdlib `unittest`) exercise resolve/validate/render/staleness/archive
