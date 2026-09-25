@@ -25,7 +25,7 @@ Set `WING=~/obsidian/projects/{slug}`.
 2. Copy every template file from `~/obsidian/projects/.template/` into `$WING` (currently 7: `readme.md`, `ARCHITECTURE.md`, `BUGS.md`, `CONTEXT.md`, `DECISIONS.md`, `GLOSSARY.md`, `QUIZ_LOG.md`).
 3. Replace every `{{PROJECT_NAME}}` placeholder with `{slug}`.
 4. Explore the active project directory (git log, key source files, package.json / composer.json / pyproject.toml) to gather: tech stack, recent commits, current branch, any open issues visible in code or TODO comments.
-5. Populate `readme.md`, `ARCHITECTURE.md`, `BUGS.md`, `CONTEXT.md`, `DECISIONS.md` with real data — do not leave template placeholders. Leave `GLOSSARY.md` and `QUIZ_LOG.md` scaffolded (empty) — the glossary fills in over time via `/palace:update`, the quiz log via `/palace:quiz`.
+5. Populate `readme.md`, `ARCHITECTURE.md`, `BUGS.md`, `CONTEXT.md`, `DECISIONS.md` with real data — do not leave template placeholders. No session transcript backs a new wing, so each DECISIONS entry's `- **Source**:` and each BUGS row's trailing `(…)` cite the commit, file or ticket it was read from. Leave `GLOSSARY.md` and `QUIZ_LOG.md` scaffolded (empty) — the glossary fills in over time via `/palace:update`, the quiz log via `/palace:quiz`.
 
 ---
 
