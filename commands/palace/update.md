@@ -120,6 +120,10 @@ Then update only what actually changed:
   - Draft real content from what this session already knows (how it works, decisions, gotchas,
     open questions). No empty headings, no speculative or placeholder content. Tell the user the
     doc was auto-drafted from this session and should be reviewed.
+  - Declare its scope, so `/spine-scan` can tell when it goes stale: a frontmatter `date:` set
+    to today (`YYYY-MM-DD`), and a `**Files changed:**` line of repo-relative paths
+    (`lib/widgets/markdown.dart`, never a bare `markdown.dart`). The scan runs `git ls-files` and
+    `git log --since=<date>` on those paths from the repo root, so a bare filename reads as deleted.
   - Refresh the index with `python3 ~/.claude/hooks/spine-palace-link.py {project-name}`, then
     point the relevant root-doc line at the new doc with a wikilink.
   - Never create `features/{feature-slug}.md` in the wing. Existing docs there are legacy:
