@@ -44,6 +44,11 @@ projects:
 ```
 If `projects` already has entries, append only if not already listed. Do this silently.
 
+Keep the file's name without `.md` as `SESSION_LINK`, e.g. `[[2026-09-25-82de83a0]]`. Step 7 cites a
+`SOURCE` on every entry it writes: `SESSION_LINK`, then `, <commit, PR or ticket>` when the fact came
+from one. If no session file was found, `SOURCE` is the external evidence alone, never a guessed
+filename.
+
 ---
 
 ## Step 4 — Load the wing
@@ -91,11 +96,15 @@ Explore the current project state for anything new or changed since the wing was
 
 Then update only what actually changed:
 - **CONTEXT.md**: Current Focus, Recent Work table, Next Up, Blocked, and replace `## Open MRs` with the freshly-fetched table from Step 6 (add the section if missing)
-- **BUGS.md**: newly discovered or resolved bugs
+- **BUGS.md**: newly discovered or resolved bugs. Every row you add or change ends its
+  Description cell with `(SOURCE)`.
 - **DECISIONS.md**: any decision inferable from recent commits or code patterns.
   Before appending, check whether a listed decision has been reversed by the code —
   if so, mark it `**Status:** Superseded by [[D-nnn]] (date) — reason` rather than
   leaving it standing next to its replacement.
+  Every entry you add or rewrite gets `- **Source**: SOURCE`. A superseding entry carries its
+  own; the superseded one keeps its original. Never backfill a source on an entry this run did
+  not touch: an unknown origin stays unknown.
 - **ARCHITECTURE.md / Critical Gotchas**: any new gotcha surfaced during exploration
 - **GLOSSARY.md**: invoke the `domain-modeling` skill against this session's conversation and code changes to spot new or changed domain terms. Write resolved terms into `GLOSSARY.md` using its `## [Term]` / `- **Definition**` / `- **Avoid**` / `- **More info**` format — **not** into `CONTEXT.md`, which in this wing already means "current focus," a different file than domain-modeling's own default glossary location. Append only new/changed terms; leave existing ones untouched unless they've demonstrably changed.
 - **`anticipated_queries` frontmatter**: for every doc actually rewritten above, regenerate its

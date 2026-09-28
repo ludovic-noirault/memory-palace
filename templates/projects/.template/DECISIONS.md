@@ -15,3 +15,4 @@ Key architectural and technical decisions — the *why* behind the stack and pat
 - **Why**: Reason / constraint / tradeoff
 - **Alternatives**: What was rejected and why
 - **Date**: Approximate date or version
+- **Source**: [[session-file]] that recorded it, plus the commit, PR or ticket it came from

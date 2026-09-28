@@ -137,16 +137,18 @@ def format_candidate(project: str, wing: str, result: dict, idx: int) -> str:
     # mistake for real content. Content only ever comes from an LLM actually
     # reading the linked session — palace-apply.py refuses to apply anything
     # that still looks like this unfilled template (see PLACEHOLDER_MARKERS).
+    source = f"[[{filename.removesuffix('.md')}]]"
     if wing == "DECISIONS":
         template = (
             f"## {NEEDS_FILL}\n"
             f"- **Decision**: {NEEDS_FILL}\n"
             f"- **Why**: {NEEDS_FILL}\n"
             f"- **Alternatives**: [if mentioned, else delete this line]\n"
-            f"- **Date**: {date}"
+            f"- **Date**: {date}\n"
+            f"- **Source**: {source}"
         )
     elif wing == "BUGS":
-        template = f"| [ID] | {NEEDS_FILL} | [low/medium/high] | open |"
+        template = f"| [ID] | {NEEDS_FILL} ({source}) | [low/medium/high] | open |"
     else:  # ARCHITECTURE
         template = f"### {NEEDS_FILL}\n{NEEDS_FILL}"
 
