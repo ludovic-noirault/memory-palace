@@ -415,6 +415,7 @@ def cmd_quiz_status(args):
 def _doctor_system():
     """Verify the WIRING (not just wing freshness): config, hooks, launchd, paths, sync.
     Prints one line per check; exits non-zero if any red."""
+    import shutil
     import subprocess as sp
     checks = []  # (ok, label, detail)
 
@@ -520,6 +521,19 @@ def _doctor_system():
     ck(not errors, "mapping validate (no orphan mappings)", "; ".join(errors[:3]))
     if warns:
         ck(True, f"validate warnings ({len(warns)})", "; ".join(w.split(' exists')[0] for w in warns[:3]))
+
+    # 9. qmd starts. Resolving is not enough: a node ABI mismatch crashes it on every Stop
+    # while `command -v qmd` stays happy.
+    qmd = shutil.which("qmd")
+    if qmd is None:
+        ck(False, "qmd runs", "qmd not on PATH")
+    else:
+        try:
+            r = sp.run([qmd, "status"], capture_output=True, text=True, timeout=20)
+            err = (r.stderr.strip().splitlines() or [""])[-1]
+            ck(r.returncode == 0, "qmd runs", f"{qmd} exited {r.returncode}: {err[:120]}")
+        except (sp.SubprocessError, OSError) as e:
+            ck(False, "qmd runs", str(e))
 
     red = 0
     for ok, label, detail in checks:

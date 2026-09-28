@@ -274,6 +274,24 @@ class SystemDoctorTests(unittest.TestCase):
         self.assertIn("✗ deployed engine files match the last install", out)
         self.assertIn("commands/palace/update.md", out)
 
+    def _doctor_with_fake_qmd(self, script):
+        root = make_vault([{"slug": "alpha", "globs": ["*/alpha*"], "memdir": "-a", "repo": "~/a"}])
+        bindir = Path(tempfile.mkdtemp(prefix="fake-qmd-"))
+        (bindir / "qmd").write_text("#!/bin/sh\n" + script)
+        (bindir / "qmd").chmod(0o755)
+        path = f"{bindir}:{os.environ['PATH']}"
+        return run(root, "doctor", "--system", extra_env={"PATH": path})[1]
+
+    def test_qmd_that_crashes_flags_red(self):
+        # Resolving is not enough: qmd on PATH that dies on start must show red, with its error.
+        out = self._doctor_with_fake_qmd("echo \"code: 'ERR_DLOPEN_FAILED'\" >&2; exit 1\n")
+        self.assertIn("✗ qmd runs", out)
+        self.assertIn("ERR_DLOPEN_FAILED", out)
+
+    def test_qmd_that_runs_is_green(self):
+        out = self._doctor_with_fake_qmd("exit 0\n")
+        self.assertIn("✓ qmd runs", out)
+
     def test_live_install_green(self):
         # Sanity: the real install should be all-green (no fixture override).
         env = {**os.environ}

@@ -6,7 +6,7 @@ denies the push.
 
 ## Test suite
 
-53 stdlib unittest cases over the resolver, validate, render, staleness, archive,
+55 stdlib unittest cases over the resolver, validate, render, staleness, archive,
 doctor and secret-scan paths. Runs in about 3 seconds, so there is no reason to push around it.
 
     bash skills/palace-tests/run.sh
