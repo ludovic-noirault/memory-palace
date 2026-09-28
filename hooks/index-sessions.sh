@@ -14,7 +14,12 @@ if [ -f "$LOG" ] && [ "$(wc -c < "$LOG")" -gt 1048576 ]; then
   tail -c 524288 "$LOG" > "$LOG.tmp" && mv "$LOG.tmp" "$LOG"
 fi
 
-python3 "$PALACE_CLAUDE_DIR/skills/recall/scripts/extract-sessions.py" --days 3
+QMD_DIR="$VAULT_DIR/Notes/Projects/claude-sessions-qmd"
+python3 "$PALACE_CLAUDE_DIR/skills/recall/scripts/extract-sessions.py" --days 3 --output "$QMD_DIR"
+
+# extract-sessions copies prompts verbatim, so a pasted token lands here: mask it before
+# qmd makes it searchable.
+python3 "$PALACE_CLAUDE_DIR/hooks/scan-secrets.py" --redact "$QMD_DIR" --days 3
 
 # qmd is an npm global on nvm's node, which is not on the Stop hook's PATH — the
 # launchd job pins the same dir for this reason. Resolve it here too, then degrade
