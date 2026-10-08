@@ -20,8 +20,8 @@ only (loaded via /palace:read and /palace:quiz respectively), never auto-injecte
                   Read-only — never creates or modifies anything. Use this at the start of a work session.
 
   /palace:create  Set up a new wing for a project that doesn't have one yet. Explores the repo, populates the 5
-                  curated content files (scaffolds GLOSSARY.md and QUIZ_LOG.md empty), and wires the new project
-                  into every hook + projects/_mapping.md so SessionStart injection and auto-memory sync work going
+                  curated content files (scaffolds GLOSSARY.md and QUIZ_LOG.md empty), and registers the new project
+                  in projects/_mapping.json so SessionStart injection and auto-memory sync work going
                   forward. Refuses to run if a wing already exists.
 
   /palace:update  Flush what happened this session back into the wing — new bugs, decisions, changed focus, refreshed

@@ -8,12 +8,12 @@ You are creating a new memory palace wing. The palace lives at `~/obsidian/proje
 
 ## Step 1 — Determine project slug + PWD pattern
 
-Run `pwd`. Read `~/obsidian/projects/_mapping.md` and check if `$PWD` already matches an existing row's pattern.
+Run `pwd`, then `~/.claude/hooks/palace-map resolve "$PWD"` to check whether `$PWD` already maps to a wing.
 
 - **Match found** → check `WING=~/obsidian/projects/{that-project-name}`. If it already exists, print `Wing already exists for {project-name}. Use /palace:read or /palace:update.` and stop.
-- **No match** → propose defaults: `slug = basename($PWD)`, `pattern = */{slug}*`. Use `AskUserQuestion` to confirm (or let the user override) both the slug and the glob pattern before proceeding — a bad pattern here silently breaks `SessionStart` injection later (this is exactly the class of bug found and fixed on 2026-07-08 for `dev`/`library-destiny-migration`/`swizzin-migration`).
+- **No match** → propose defaults: `slug = basename($PWD)`, `pattern = */{slug}*`. Use `AskUserQuestion` to confirm (or let the user override) both the slug and the glob pattern before proceeding — a bad pattern here silently breaks `SessionStart` injection later.
 
-Also check the pattern doesn't collide with (i.e. isn't a substring match of, or matched by) any existing pattern in `_mapping.md` — if it does, flag it to the user in the same question instead of guessing silently.
+Also check the pattern doesn't collide with (i.e. isn't a substring match of, or matched by) any existing glob in `~/obsidian/projects/_mapping.json` — if it does, flag it to the user in the same question instead of guessing silently.
 
 Set `WING=~/obsidian/projects/{slug}`.
 
@@ -54,7 +54,7 @@ If `validate` reports an ERROR or `resolve` prints the wrong slug (glob collisio
 
 ## Step 3b — Wire SPINE_VAULT_PATH (mandatory, do not skip)
 
-Without this, the Spine plugin's episode hook falls back to `~/.spine/config.json`'s global `vaultPath` and silently files this project's session episodes into whichever aile happens to be the global default — a real incident, not a hypothetical (found 2026-08-10: `grocery-tools` episodes were landing in `fne`'s vault; `toovalu-impact`, `boulangerie`, `library-destiny-migration`, and `dev` were exposed to the same silent misrouting).
+Without this, the Spine plugin's episode hook falls back to `~/.spine/config.json`'s global `vaultPath` and silently files this project's session episodes into whichever aile happens to be the global default.
 
 1. Read `$PWD/.claude/settings.json` if it exists (preserve its other keys — `hooks`, `additionalDirectories`, etc.); otherwise you're creating it fresh.
 2. Ensure it has:

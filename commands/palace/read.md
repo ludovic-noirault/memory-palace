@@ -4,7 +4,7 @@ description: Load memory palace context for the active project — read-only, ne
 
 You are loading the memory palace for the active project. The palace lives at `~/obsidian/projects/`. This command performs **zero writes** — no wing creation, no file edits, no session stamping. If anything is missing, tell the user and point at `/palace:create` or `/palace:update` instead of acting on their behalf.
 
-If the user invoked this with trailing text after `/palace:read` (e.g. `/palace:read how does auth work`), treat that text as `QUERY` and run Step 3.5 below. With no trailing text, `QUERY` is unset and behavior is identical to today — skip Step 3.5 entirely.
+If the user invoked this with trailing text after `/palace:read` (e.g. `/palace:read how does auth work`), treat that text as `QUERY` and run Step 3.5 below. With no trailing text, `QUERY` is unset: skip Step 3.5 entirely.
 
 ---
 
