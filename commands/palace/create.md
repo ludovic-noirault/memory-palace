@@ -71,8 +71,22 @@ Without this, the Spine plugin's episode hook falls back to `~/.spine/config.jso
 
 ---
 
+## Step 3c — Wire the forge account (only when more than one gh account is logged in)
+
+`gh`'s active account is global and flips, so a project bound to a non-default account needs its own config dir, or `gh` calls (and hooks that run `gh`) hit the wrong account.
+
+1. Skip this step if `REMOTE`'s host is not GitHub, or if `gh auth status` lists a single account.
+2. Ask the user which account the project uses (`AskUserQuestion`, one option per account from `gh auth status`). If it is the default account they normally keep active, stop here.
+3. Otherwise the config dir is `~/.config/gh-{account}`. If `GH_CONFIG_DIR=<dir> gh auth status` does not show that account, give the user the one-time login to run themselves (interactive, never run it for them): `! GH_CONFIG_DIR=<dir> gh auth login --hostname github.com --git-protocol ssh --skip-ssh-key --web`.
+4. Merge `"GH_CONFIG_DIR": "<dir>"` into the same `env` block as Step 3b, with the same no-print merge.
+5. Confirm: `GH_CONFIG_DIR=<dir> gh repo view {owner}/{REMOTE} --json nameWithOwner` succeeds.
+
+It only applies to sessions launched in `$PWD`; tell the user that a `cd` from a session started elsewhere keeps the global account.
+
+---
+
 ## Step 4 — Report + brief
 
-Tell the user: **"Wing created for {slug}, wired via _mapping.json (one source — validate passed), SPINE_VAULT_PATH set."**
+Tell the user: **"Wing created for {slug}, wired via _mapping.json (one source — validate passed), SPINE_VAULT_PATH set{, GH_CONFIG_DIR set when Step 3c applied}."**
 
 Then print the session brief (same format as `/palace:read` Step 4, plus recent sessions and open MRs — Steps 5–6 of that command).
