@@ -33,12 +33,13 @@ Set `WING=~/obsidian/projects/{slug}`.
 
 Identity lives in ONE file — `~/obsidian/projects/_mapping.json`. The hooks/scripts (`palace-context.sh`, `palace-reminder.sh`, the `settings.json` Stop hook, `palace-to-memory`) all resolve through `~/.claude/hooks/palace-map`, so there is **nothing else to edit** — do NOT re-add a `case` list anywhere.
 
-Compute `MEMDIR = $PWD with every "/" replaced by "-"` (how Claude Code encodes project dirs under `~/.claude/projects/`).
+Compute `MEMDIR = $PWD with every "/" replaced by "-"` (how Claude Code encodes project dirs under `~/.claude/projects/`), and `REMOTE = basename of $(git remote get-url origin)` without `.git` (the name spine keys a repo's docs on).
 
 Append one entry to the `projects` array in `_mapping.json` (preserve the order/first-match semantics — put more-specific globs before broader ones):
 
 ```json
-{ "slug": "{slug}", "globs": ["{pattern}"], "memdir": "{MEMDIR}", "repo": "{$PWD}" }
+{ "slug": "{slug}", "globs": ["{pattern}"], "memdir": "{MEMDIR}", "repo": "{$PWD}",
+  "repos": [{ "remote": "{REMOTE}", "path": "{$PWD}", "dir": "{REMOTE}" }] }
 ```
 
 Then regenerate the human table and validate:
@@ -56,8 +57,8 @@ If `validate` reports an ERROR or `resolve` prints the wrong slug (glob collisio
 
 Without this, the Spine plugin's episode hook falls back to `~/.spine/config.json`'s global `vaultPath` and silently files this project's session episodes into whichever aile happens to be the global default.
 
-1. Read `$PWD/.claude/settings.json` if it exists (preserve its other keys — `hooks`, `additionalDirectories`, etc.); otherwise you're creating it fresh.
-2. Ensure it has:
+1. Target `$PWD/.claude/settings.local.json`, not `settings.json`: the wing path is absolute and machine-specific, and a client repo often tracks `settings.json`, so the path would land in its history. Check `git check-ignore -q .claude/settings.local.json`; if it is not ignored, stop and tell the user.
+2. Merge only the `env` key (preserve every other key, create the file if missing), with a script that never prints the file: settings files can hold secrets. Ensure it has:
    ```json
    {
      "env": {
@@ -66,7 +67,7 @@ Without this, the Spine plugin's episode hook falls back to `~/.spine/config.jso
    }
    ```
    (merge into the existing `env` block if one already exists — don't clobber other env vars.)
-3. Confirm: `grep SPINE_VAULT_PATH "$PWD/.claude/settings.json"` should print the wing path.
+3. Confirm: `grep SPINE_VAULT_PATH "$PWD/.claude/settings.local.json"` should print the wing path.
 
 ---
 

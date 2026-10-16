@@ -143,7 +143,7 @@ done
 
 For each remote, parse host + project path (SSH `git@HOST:ORG/REPO.git` or HTTPS `https://HOST/ORG/REPO.git`).
 
-Token lookup: `cat ~/.claude/tokens/{host} 2>/dev/null`
+Token lookup: read it into `TOKEN` inside the same command as the `curl` call, so the value never prints into the transcript: `TOKEN=$(cat ~/.claude/tokens/{host} 2>/dev/null)`
 
 **GitLab** (host ≠ `github.com`):
 ```bash
