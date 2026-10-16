@@ -18,7 +18,8 @@ Commands:
   validate          check every mapping has a wing + every wing is wired; exit 1 on ERROR
   render            rewrite the generated table region in _mapping.md from the JSON
   doctor            report per-wing staleness (behind activity) + dormancy (>90d idle)
-  doctor --system   verify the whole install: config, hooks, launchd, paths, sync; exit 1 if any red
+  doctor --system   verify the whole install: config, hooks, launchd, paths, sync; exit 1 if any red;
+                    warns (!) on repos not pinning env.SPINE_VAULT_PATH to their wing
   archive <slug>    set the wing's readme frontmatter status: archived
   unarchive <slug>  set it back to status: active
   search <query> [--slug S] [--all]  keyword-overlap search over anticipated_queries (spine: answers)
@@ -412,6 +413,43 @@ def cmd_quiz_status(args):
         print("NUDGE")
 
 
+def _spine_vault_path_warnings():
+    """One message per existing repo path whose .claude/settings{,.local}.json does not set
+    env.SPINE_VAULT_PATH to the project's wing dir. Reads that single key and never echoes
+    file content, since these files can hold secrets."""
+    out = []
+    for p in load():
+        wing = os.path.normpath(str(VAULT_PROJECTS / p["slug"]))
+        paths = ([p["repo"]] if p.get("repo") else []) + [r["path"] for r in p.get("repos", []) if r.get("path")]
+        for raw in paths:
+            repo = os.path.expanduser(raw)
+            if not os.path.isdir(repo):
+                continue
+            found, unreadable = [], []
+            for name in ("settings.json", "settings.local.json"):
+                f = os.path.join(repo, ".claude", name)
+                if not os.path.exists(f):
+                    continue
+                try:
+                    with open(f) as fh:
+                        v = json.load(fh).get("env", {}).get("SPINE_VAULT_PATH")
+                except (OSError, ValueError, AttributeError):
+                    unreadable.append(name)
+                    continue
+                if v:
+                    found.append(os.path.normpath(os.path.expanduser(str(v))))
+            if wing in found:
+                continue
+            if found:
+                why = f"points at another wing in {repo}"
+            elif unreadable:
+                why = f"{', '.join(unreadable)} unreadable in {repo}"
+            else:
+                why = f"not set in {repo}/.claude/settings(.local).json"
+            out.append(f"{p['slug']}: env.SPINE_VAULT_PATH {why}, expected {wing}")
+    return out
+
+
 def _doctor_system():
     """Verify the WIRING (not just wing freshness): config, hooks, launchd, paths, sync.
     Prints one line per check; exits non-zero if any red."""
@@ -421,6 +459,10 @@ def _doctor_system():
 
     def ck(ok, label, detail=""):
         checks.append((bool(ok), label, detail))
+
+    def warn(label, detail=""):
+        # Reported but never red: ok is None.
+        checks.append((None, label, detail))
 
     # 1. config file
     envf = CLAUDE_DIR / "palace.env"
@@ -522,6 +564,10 @@ def _doctor_system():
     if warns:
         ck(True, f"validate warnings ({len(warns)})", "; ".join(w.split(' exists')[0] for w in warns[:3]))
 
+    # 8b. each repo pins SPINE_VAULT_PATH to its own wing (warning only)
+    for line in _spine_vault_path_warnings():
+        warn("SPINE_VAULT_PATH", line)
+
     # 9. qmd starts. Resolving is not enough: a node ABI mismatch crashes it on every Stop
     # while `command -v qmd` stays happy.
     qmd = shutil.which("qmd")
@@ -535,16 +581,19 @@ def _doctor_system():
         except (sp.SubprocessError, OSError) as e:
             ck(False, "qmd runs", str(e))
 
-    red = 0
+    red = warned = 0
     for ok, label, detail in checks:
-        mark = "✓" if ok else "✗"
-        if not ok:
+        mark = "!" if ok is None else "✓" if ok else "✗"
+        if ok is None:
+            warned += 1
+        elif not ok:
             red += 1
         line = f"  {mark} {label}"
         if detail and not ok:
             line += f"  — {detail}"
         print(line)
-    print(f"\n{'ALL GREEN' if not red else str(red) + ' RED'} ({len(checks)} checks)")
+    suffix = f", {warned} warning{'s' if warned != 1 else ''}" if warned else ""
+    print(f"\n{'ALL GREEN' if not red else str(red) + ' RED'} ({len(checks)} checks{suffix})")
     sys.exit(1 if red else 0)
 
 

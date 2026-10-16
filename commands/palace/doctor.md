@@ -15,7 +15,7 @@ Run these two commands and capture their output:
 ~/.claude/hooks/palace-map doctor            # per-wing: staleness (wing behind activity) + dormancy (>90d idle)
 ```
 
-Both are read-only. `doctor --system` exits non-zero if any check is red.
+Both are read-only. `doctor --system` exits non-zero if any check is red. Lines marked `!` are warnings and never turn it red.
 
 ---
 
@@ -38,6 +38,7 @@ For each problem found, name the concrete fix. Map symptoms → remedies:
 |---|---|
 | `doctor --system` red line: missing hook entry, unloaded launchd, missing path, `_mapping.md` out of sync | `~/memory-palace/install.sh` (idempotent: deploys the engine files, then runs `palace-install.sh` to re-wire hooks and launchd) |
 | `doctor --system` red line: deployed engine files edited, `qmd runs`, spine dirs reachable | the remedy in that line's detail. For edited files, port the edit into `~/memory-palace` before reinstalling, since install overwrites the deployed copy |
+| `doctor --system` warning `!  SPINE_VAULT_PATH` (repo does not pin its wing, or points at another, or its settings file is unparsable) | add `env.SPINE_VAULT_PATH` = the wing dir to that repo's `.claude/settings.local.json`; never paste the file's other content into the transcript |
 | `validate` ERROR — orphan mapping (entry, no wing) | edit `projects/_mapping.json` to remove the entry (or create the wing), then `palace-map render` + `validate` |
 | `validate` WARN — unwired wing (wing, no entry) | add the wing to `_mapping.json`, or `/palace:create` from its repo |
 | Wing `STALE` (repo commits newer than CONTEXT.md) | `cd` into that repo and run `/palace:update` |
