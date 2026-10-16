@@ -302,6 +302,78 @@ class SystemDoctorTests(unittest.TestCase):
         self.assertIn("ALL GREEN", r.stdout)
 
 
+class SystemDoctorSpineVaultPathTests(unittest.TestCase):
+    """Warning-only check: a repo path should pin env.SPINE_VAULT_PATH to its own wing."""
+
+    def _doctor(self, settings=None, local=None, create_repo=True):
+        """settings/local: dict, raw str, or callable(wing_path) -> dict. Returns (rc, out, wing, repo)."""
+        root = make_vault([{"slug": "alpha", "globs": ["*/alpha*"], "memdir": "-a", "repo": "~/a"}])
+        wing = str(root / "projects" / "alpha")
+        repo = root / "repo"
+        if create_repo:
+            (repo / ".claude").mkdir(parents=True)
+            for name, content in (("settings.json", settings), ("settings.local.json", local)):
+                if callable(content):
+                    content = content(wing)
+                if content is not None:
+                    (repo / ".claude" / name).write_text(
+                        content if isinstance(content, str) else json.dumps(content))
+        (root / "projects" / "_mapping.json").write_text(json.dumps({"projects": [
+            {"slug": "alpha", "globs": ["*/alpha*"], "memdir": "-a", "repo": str(repo)}]}))
+        rc, out, _ = run(root, "doctor", "--system")
+        return rc, out, wing, repo
+
+    def _warn_lines(self, out):
+        return [l for l in out.splitlines() if "SPINE_VAULT_PATH" in l]
+
+    def test_correct_value_passes(self):
+        # trailing slash proves paths are compared normalized
+        _, out, _, _ = self._doctor(settings=lambda w: {"env": {"SPINE_VAULT_PATH": w + "/"}})
+        self.assertEqual(self._warn_lines(out), [])
+
+    def test_missing_var_warns_without_going_red(self):
+        _, out, _, repo = self._doctor(settings={"env": {"OTHER": "1"}})
+        lines = self._warn_lines(out)
+        self.assertEqual(len(lines), 1, out)
+        self.assertIn("alpha", lines[0])
+        self.assertIn(str(repo), lines[0])
+        self.assertTrue(lines[0].lstrip().startswith("!"), lines[0])
+        self.assertNotIn("✗ " + lines[0].lstrip()[2:], out)
+
+    def test_warning_does_not_add_a_red(self):
+        _, with_warn, _, _ = self._doctor(settings={"env": {}})
+        _, no_warn, _, _ = self._doctor(settings=lambda w: {"env": {"SPINE_VAULT_PATH": w}})
+        red = lambda o: o.count("✗")
+        self.assertEqual(red(with_warn), red(no_warn))
+
+    def test_wrong_wing_warns(self):
+        _, out, _, repo = self._doctor(settings={"env": {"SPINE_VAULT_PATH": "/somewhere/else/beta"}})
+        lines = self._warn_lines(out)
+        self.assertEqual(len(lines), 1, out)
+        self.assertIn("alpha", lines[0])
+        self.assertIn(str(repo), lines[0])
+
+    def test_value_in_local_settings_counts(self):
+        _, out, _, _ = self._doctor(settings={"env": {}},
+                                    local=lambda w: {"env": {"SPINE_VAULT_PATH": w}})
+        self.assertEqual(self._warn_lines(out), [])
+
+    def test_unparsable_file_warns_without_leaking_content(self):
+        _, out, _, repo = self._doctor(settings='{"env": {"TOKEN": "s3cret-value", oops')
+        lines = self._warn_lines(out)
+        self.assertEqual(len(lines), 1, out)
+        self.assertIn(str(repo), lines[0])
+        self.assertNotIn("s3cret-value", out)
+
+    def test_other_keys_are_never_printed(self):
+        _, out, _, _ = self._doctor(settings={"env": {"API_KEY": "s3cret-value"}})
+        self.assertNotIn("s3cret-value", out)
+
+    def test_nonexistent_repo_path_is_skipped(self):
+        _, out, _, _ = self._doctor(create_repo=False)
+        self.assertEqual(self._warn_lines(out), [])
+
+
 class SystemDoctorGlossaryTests(unittest.TestCase):
     def test_missing_glossary_flags_red(self):
         root = make_vault([{"slug": "alpha", "globs": ["*/alpha*"], "memdir": "-a", "repo": "~/a"}])

@@ -82,7 +82,7 @@ palace-map resolve <pwd>     slug whose glob matches <pwd>
 palace-map validate          orphan mappings / unwired wings; exit 1 on error
 palace-map render            regenerate the table in _mapping.md from _mapping.json
 palace-map doctor            per-wing staleness + dormancy
-palace-map doctor --system   whole-install health (config, hooks, launchd, paths, sync)
+palace-map doctor --system   whole-install health (config, hooks, launchd, paths, sync, SPINE_VAULT_PATH warnings)
 palace-map archive <slug>    set a wing status: archived  (unarchive to reverse)
 ```
 
