@@ -19,6 +19,9 @@ only (loaded via /palace:read and /palace:quiz respectively), never auto-injecte
   /palace:read    Load the wing + print a session brief (focus, blockers, bugs, gotchas, recent sessions, open MRs).
                   Read-only — never creates or modifies anything. Use this at the start of a work session.
 
+  /palace:search  Find which wing doc (feature sub-docs included) answers a question, ranked by anticipated_queries.
+                  Read-only.
+
   /palace:create  Set up a new wing for a project that doesn't have one yet. Explores the repo, populates the 5
                   curated content files (scaffolds GLOSSARY.md and QUIZ_LOG.md empty), and registers the new project
                   in projects/_mapping.json so SessionStart injection and auto-memory sync work going
@@ -34,7 +37,8 @@ only (loaded via /palace:read and /palace:quiz respectively), never auto-injecte
                   tutor-style, questions generated fresh each run, score appended to QUIZ_LOG.md. Refuses to run if
                   no wing exists yet.
 
-**Maintenance (CLI, rarely needed):** `palace-install.sh` (re)installs/moves the system to a new machine;
+**Maintenance (CLI, rarely needed):** `~/memory-palace/install.sh` deploys the engine (new machine, or after `git pull`) and runs
+`palace-install.sh`, which re-wires hooks + launchd;
 `palace-map validate|render` are plumbing run by /palace:create. See the Operations section of memory-setup.md.
 
 **More detail:** ~/obsidian/memory-setup.md (architecture + Operations) and projects/_mapping.json

@@ -11,7 +11,7 @@ You are running a health check on the memory-palace system. This command is **re
 Run these two commands and capture their output:
 
 ```bash
-~/.claude/hooks/palace-map doctor --system   # wiring: config, hooks, launchd, paths, sync, validate (23 checks)
+~/.claude/hooks/palace-map doctor --system   # wiring: config, hooks, launchd, paths, sync, deployed-file drift, validate, qmd
 ~/.claude/hooks/palace-map doctor            # per-wing: staleness (wing behind activity) + dormancy (>90d idle)
 ```
 
@@ -36,7 +36,8 @@ For each problem found, name the concrete fix. Map symptoms → remedies:
 
 | Symptom (from doctor) | Proposed fix |
 |---|---|
-| Any `doctor --system` red line (missing hook entry, unloaded launchd, missing path, `_mapping.md` out of sync) | `bash ~/.claude/hooks/palace-install.sh` (idempotent re-sync) |
+| `doctor --system` red line: missing hook entry, unloaded launchd, missing path, `_mapping.md` out of sync | `~/memory-palace/install.sh` (idempotent: deploys the engine files, then runs `palace-install.sh` to re-wire hooks and launchd) |
+| `doctor --system` red line: deployed engine files edited, `qmd runs`, spine dirs reachable | the remedy in that line's detail. For edited files, port the edit into `~/memory-palace` before reinstalling, since install overwrites the deployed copy |
 | `validate` ERROR — orphan mapping (entry, no wing) | edit `projects/_mapping.json` to remove the entry (or create the wing), then `palace-map render` + `validate` |
 | `validate` WARN — unwired wing (wing, no entry) | add the wing to `_mapping.json`, or `/palace:create` from its repo |
 | Wing `STALE` (repo commits newer than CONTEXT.md) | `cd` into that repo and run `/palace:update` |
