@@ -1,5 +1,5 @@
 ---
-description: Explain what the memory palace is, why it exists, and how to use /palace:read, :create, :update, :doctor
+description: Explain what the memory palace is, why it exists, and how to use /palace:read, :search, :create, :update, :doctor, :quiz
 ---
 
 Print exactly the block below, verbatim. Do not run any tools, read any files, or take any action — this command only explains.
