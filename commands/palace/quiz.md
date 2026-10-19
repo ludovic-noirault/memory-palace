@@ -64,7 +64,7 @@ file/section where an answer was wrong, e.g. `DECISIONS: why Postgres`).
 
 ## Step 6 — Score + log
 
-Report the final score conversationally (e.g. "6/8 — solid, but the Postgres decision needs another look").
+Report the final score conversationally (e.g. "6/8, solid, but the Postgres decision needs another look").
 
 Get today's date: `date +%F`.
 
@@ -75,9 +75,9 @@ If `QUIZ_LOG.md` doesn't exist yet, create it first with:
 tags: [project, quiz-log]
 project: {project-name}
 ---
-# Quiz Log — {project-name}
+# Quiz Log: {project-name}
 
-Append-only history of `/palace:quiz` runs — comprehension score and weak topics per run. Not a
+Append-only history of `/palace:quiz` runs: comprehension score and weak topics per run. Not a
 spaced-repetition schedule; questions are regenerated fresh from the wing every time, this file only
 tracks how you did.
 
