@@ -68,7 +68,7 @@ Report the final score conversationally (e.g. "6/8 — solid, but the Postgres d
 
 Get today's date: `date +%F`.
 
-If `QUIZ_LOG.md` doesn't exist yet (a wing created before this feature), create it first with:
+If `QUIZ_LOG.md` doesn't exist yet, create it first with:
 
 ```
 ---

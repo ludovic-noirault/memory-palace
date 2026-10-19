@@ -31,7 +31,7 @@ Set `WING=~/obsidian/projects/{slug}`.
 
 ## Step 3 — Wire the project (single source)
 
-Identity lives in ONE file — `~/obsidian/projects/_mapping.json`. The hooks/scripts (`palace-context.sh`, `palace-reminder.sh`, the `settings.json` Stop hook, `palace-to-memory`) all resolve through `~/.claude/hooks/palace-map`, so there is **nothing else to edit** — do NOT re-add a `case` list anywhere.
+Identity lives in ONE file — `~/obsidian/projects/_mapping.json`. The hooks/scripts (`palace-context.sh`, `palace-reminder.sh`, the `settings.json` Stop hook, `palace-to-memory`) all resolve through `~/.claude/hooks/palace-map`, so there is **nothing else to edit**: never hand-code a cwd→project list in a hook or script.
 
 Compute `MEMDIR = $PWD with every "/" replaced by "-"` (how Claude Code encodes project dirs under `~/.claude/projects/`), and `REMOTE = basename of $(git remote get-url origin)` without `.git` (the name spine keys a repo's docs on).
 

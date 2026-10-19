@@ -93,7 +93,7 @@ If `QUERY` was set (Step 3.5 ran), append immediately after the code block above
 
 ```
 **Answering: "{QUERY}"**
-{2-5 sentence synthesized answer, drawn from the docs identified in Step 3.5 — not a raw file dump}
+{synthesized answer sized to the question, drawn from the docs identified in Step 3.5 — not a raw file dump}
 _Sourced from: {file1}, {file2}_
 ```
 
@@ -104,7 +104,7 @@ naming the core docs actually drawn from:
 **Answering: "{QUERY}"**
 No wing doc's anticipated_queries matched this question — answering from the core docs already
 loaded; if this is a recurring question, /palace:update can add proper coverage for it.
-{2-5 sentence synthesized answer from the core docs}
+{synthesized answer sized to the question, from the core docs}
 _Sourced from: {file1}, {file2}_
 ```
 
