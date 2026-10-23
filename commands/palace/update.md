@@ -62,7 +62,7 @@ Read all 6 files in parallel: `readme.md`, `ARCHITECTURE.md`, `BUGS.md`, `CONTEX
 Output:
 
 ```
-## 🏛 Palace Brief — {project-name}
+## 🏛 Palace Brief: {project-name}
 
 **Focus**: {current focus from CONTEXT.md}
 

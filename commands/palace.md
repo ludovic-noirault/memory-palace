@@ -7,17 +7,17 @@ Print exactly the block below, verbatim. Do not run any tools, read any files, o
 ```
 ## 🏛 Memory Palace
 
-**Why it exists:** Claude Code sessions are stateless — every new session starts cold. The palace is a per-project memory
+**Why it exists:** Claude Code sessions are stateless: every new session starts cold. The palace is a per-project memory
 of what's being worked on, what's broken, and why past decisions were made, so you don't re-explain context every time.
 
-**Where it lives:** ~/obsidian/projects/{project-name}/ — 7 files: readme.md, ARCHITECTURE.md, BUGS.md,
+**Where it lives:** ~/obsidian/projects/{project-name}/, 7 files: readme.md, ARCHITECTURE.md, BUGS.md,
 CONTEXT.md, DECISIONS.md, GLOSSARY.md (6 curated files), plus an append-only QUIZ_LOG.md. CONTEXT.md is
 auto-injected into every session via the SessionStart hook; GLOSSARY.md and QUIZ_LOG.md are on-demand
 only (loaded via /palace:read and /palace:quiz respectively), never auto-injected.
 
 **Commands:**
   /palace:read    Load the wing + print a session brief (focus, blockers, bugs, gotchas, recent sessions, open MRs).
-                  Read-only — never creates or modifies anything. Use this at the start of a work session.
+                  Read-only, never creates or modifies anything. Use this at the start of a work session.
 
   /palace:search  Find which wing doc (feature sub-docs included) answers a question, ranked by anticipated_queries.
                   Read-only.
@@ -27,13 +27,13 @@ only (loaded via /palace:read and /palace:quiz respectively), never auto-injecte
                   in projects/_mapping.json so SessionStart injection and auto-memory sync work going
                   forward. Refuses to run if a wing already exists.
 
-  /palace:update  Flush what happened this session back into the wing — new bugs, decisions, changed focus, refreshed
-                  MRs — then sync to Claude auto-memory. Refuses to run if no wing exists yet (run /palace:create first).
+  /palace:update  Flush what happened this session back into the wing (new bugs, decisions, changed focus, refreshed
+                  MRs), then sync to Claude auto-memory. Refuses to run if no wing exists yet (run /palace:create first).
 
   /palace:doctor  Health-check the whole install (hooks, launchd, paths, config) + every wing (staleness, dormancy),
-                  interpret the results, and propose fixes. Read-only — never changes anything without your yes.
+                  interpret the results, and propose fixes. Read-only, never changes anything without your yes.
 
-  /palace:quiz    Quiz you on the wing's content (glossary terms, decisions, gotchas, open bugs) to test retention —
+  /palace:quiz    Quiz you on the wing's content (glossary terms, decisions, gotchas, open bugs) to test retention:
                   tutor-style, questions generated fresh each run, score appended to QUIZ_LOG.md. Refuses to run if
                   no wing exists yet.
 
